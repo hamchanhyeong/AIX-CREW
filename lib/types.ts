@@ -33,6 +33,8 @@ export interface Project {
   draftGeneratedAt?: string;
   generationMode: GenerationMode;
   modifiedSinceSnapshot: boolean;
+  /** 마지막으로 작업 파일(.json)을 내려받은 시각 */
+  lastFileSavedAt?: string;
 }
 
 export interface Program {

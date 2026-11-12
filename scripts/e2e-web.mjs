@@ -26,9 +26,9 @@ const shot = (n) => page.screenshot({ path: path.join(OUT, `${n}.png`) });
 
 // 1
 await page.goto(URL);
-await page.getByRole("button", { name: /샘플 프로젝트 (다시 )?시작/ }).click();
+await page.getByRole("button", { name: /연습용 샘플로 먼저 해 보기|연습용 샘플 (열기|다시 시작)/ }).first().click();
 await page.getByText("자료 관리", { exact: true }).first().waitFor();
-assert(await page.getByText("시연용 가상 자료 — 실제 사업 조건이 아닙니다.").first().isVisible(), "1. 샘플 프로젝트 시작(시연용 가상 자료 표시)");
+assert(await page.getByText("시연용 가상 자료 — 실제 사업 조건이 아닙니다.").first().isVisible(), "1. 연습용 샘플 시작(시연용 가상 자료 표시)");
 // 2
 await page.getByRole("cell", { name: /\[가상\] 재기지원 사업 운영계획\(안\)/ }).first().click();
 await page.getByText("- 지원 한도(기업당 최대): 1억원").waitFor();
@@ -98,7 +98,7 @@ const dl = async (click, save) => {
 };
 await dl(() => page.getByRole("button", { name: "신구대비표.docx 다운로드" }).click(), "신구대비표.docx");
 await page.goto(`${URL}#/export`);
-for (const [label, save] of [["운영규칙 초안.docx", "운영규칙 초안.docx"], ["운영요령 초안.docx", "운영요령 초안.docx"], ["근거 매핑표.csv", "근거 매핑표.csv"], ["작업 백업.json", "작업 백업.json"]]) {
+for (const [label, save] of [["운영규칙 초안.docx", "운영규칙 초안.docx"], ["운영요령 초안.docx", "운영요령 초안.docx"], ["근거 매핑표.csv", "근거 매핑표.csv"], ["작업 파일(.json)", "작업 백업.json"]]) {
   await dl(() => page.locator(".dl li", { hasText: label }).getByRole("button", { name: "다운로드" }).click(), save);
 }
 // 11
@@ -117,7 +117,7 @@ await page.goto(URL);
 await page.waitForTimeout(200);
 await shot("00-dashboard");
 // ── 반응형 점검: 화면 폭별로 모든 화면에서 가로 넘침이 없는지
-const ROUTES = ["", "sources", "conditions", "editor", "review", "changes", "export"];
+const ROUTES = ["", "sources", "conditions", "editor", "review", "changes", "export", "help"];
 const WIDTHS = [[390, 844], [768, 1024], [1024, 768], [1280, 800], [1440, 900]];
 const overflow = [];
 for (const [w, h] of WIDTHS) {
@@ -129,7 +129,7 @@ for (const [w, h] of WIDTHS) {
     if (o > 1) overflow.push(`${w}px #/${r} +${o}px`);
   }
 }
-assert(overflow.length === 0, `반응형: 5개 폭(390·768·1024·1280·1440px) × 7개 화면 가로 넘침 없음 ${overflow.join(", ")}`);
+assert(overflow.length === 0, `반응형: 5개 폭(390·768·1024·1280·1440px) × 8개 화면 가로 넘침 없음 ${overflow.join(", ")}`);
 
 // ── 휴대폰(390px) 조작
 await page.setViewportSize({ width: 390, height: 844 });

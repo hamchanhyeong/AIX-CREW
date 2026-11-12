@@ -1,6 +1,6 @@
 // 정적 반응형 웹(site/). 화면은 프레임워크 없이 그리고,
 // 조문 템플릿·점검·계획 변경·내보내기 로직은 lib/(테스트로 검증된 코드)를 그대로 사용한다.
-// 저장: 브라우저 localStorage. AI 호출 없음(데모·템플릿 모드 전용 — API 키를 브라우저에 둘 수 없음).
+// 저장: 이 PC 브라우저 내부(IndexedDB, web/storage.ts) + 작업 파일(.json) 저장·열기. AI 호출 없음(데모·템플릿 모드 전용 — API 키를 브라우저에 둘 수 없음).
 // 반응형: ≥1280 3단 편집기 · 768~1279 서랍 메뉴 · ≤767 카드형 표·편집기 탭
 import { Packer } from "docx";
 import { applySuggestion, decideSuggestion, diffConditions, proposeFromPlanDoc, saveChangeSetVersion, startChangeSet, type ProposedCondition } from "../lib/change";
@@ -53,19 +53,25 @@ import { validateWorkspace } from "../lib/schema";
 import { conditionTitle, emptyWorkspace } from "../lib/structure";
 import type { Applicability, ChangeSet, CondStatus, DocKind, ReviewStatus, SourceRole, SourceType, Workspace } from "../lib/types";
 import { formatDate } from "../lib/util";
+import { BACKEND_LABEL, backend, deleteWorkspace, initStorage, saveWorkspace, setMeta, storageEstimate, type Kind } from "./storage";
 
-type Kind = "sample" | "main";
-const KIND_KEY = "reguflow-html.kind";
-const wsKey = (k: Kind) => `reguflow-html.ws.${k}`;
+declare const __APP_VERSION__: string;
+export const APP_VERSION = typeof __APP_VERSION__ === "string" ? __APP_VERSION__ : "dev";
 
-// ───────────────────────── 상태
-let kind: Kind = (safeGet(KIND_KEY) as Kind) === "sample" ? "sample" : "main";
-let ws: Workspace | null = loadWs(kind);
-let saveMsg = ws ? "저장됨" : "";
+// ───────────────────────── 상태 (저장소는 web/storage.ts — IndexedDB 우선)
+let kind: Kind = "main";
+let ws: Workspace | null = null;
+const store: Record<Kind, Workspace | null> = { main: null, sample: null };
+let saveMsg = "";
+let booted = false;
 const ui = {
   selectedDoc: null as string | null,
   addingDoc: false,
   addText: "",
+  addPages: null as null | { pages: string[]; text: string; format: "pdf" | "docx" | "txt"; fileName: string; note: string },
+  regPages: null as null | { pages: string[]; text: string; format: "pdf" | "docx" | "txt"; fileName: string; note: string },
+  importing: false,
+  addMeta: null as null | ReturnType<typeof readMeta>,
   editDoc: "rule" as DocKind,
   clauseId: null as string | null,
   draft: null as null | { id: string; title: string; body: string },
@@ -88,31 +94,30 @@ const ui = {
 };
 let toasts: { id: number; text: string; tone: "ok" | "error" | "info" }[] = [];
 
-function safeGet(k: string): string | null {
-  try {
-    return localStorage.getItem(k);
-  } catch {
-    return null;
-  }
+function asWorkspace(v: unknown): Workspace | null {
+  if (!v) return null;
+  const r = validateWorkspace(v);
+  return r.ok ? r.ws : null;
 }
-function loadWs(k: Kind): Workspace | null {
-  const raw = safeGet(wsKey(k));
-  if (!raw) return k === "main" ? emptyWorkspace("main") : null;
-  try {
-    const v = validateWorkspace(JSON.parse(raw));
-    return v.ok ? v.ws : null;
-  } catch {
-    return null;
-  }
+function renderSave() {
+  const el = document.querySelector(".save");
+  if (!el) return;
+  el.textContent = saveMsg;
+  el.classList.toggle("err", saveMsg.startsWith("저장 실패"));
 }
 function persist() {
   if (!ws) return;
-  try {
-    localStorage.setItem(wsKey(kind), JSON.stringify(ws));
-    saveMsg = `저장됨 · ${formatDate(new Date().toISOString())}`;
-  } catch {
-    saveMsg = "저장 실패(브라우저 저장공간 부족 또는 차단) — 백업 JSON을 내려받아 두세요";
-  }
+  store[kind] = ws;
+  saveMsg = "저장 중…";
+  renderSave();
+  saveWorkspace(kind, ws)
+    .then(() => (saveMsg = `저장됨 · ${formatDate(new Date().toISOString())}`))
+    .catch(() => (saveMsg = "저장 실패 — ‘작업 파일 저장’으로 파일을 꼭 내려받아 두세요"))
+    .finally(renderSave);
+}
+function setKind(k: Kind) {
+  kind = k;
+  setMeta("kind", k).catch(() => {});
 }
 function notify(text: string, tone: "ok" | "error" | "info" = "info") {
   const id = Date.now() + Math.random();
@@ -184,14 +189,20 @@ const NAV: [string, string, string][] = [
   ["editor", "규정 편집기", "3"],
   ["review", "검토 목록", "4"],
   ["changes", "계획 변경·신구대비표", "5"],
-  ["export", "내보내기·백업", "6"],
+  ["export", "내보내기·작업 파일", "6"],
+  ["help", "사용 안내", "?"],
 ];
 const route = () => location.hash.replace(/^#\/?/, "").split("?")[0];
 
 function render() {
   const r = route();
   const issues = ws ? computeIssues(ws) : [];
+  if (!booted) {
+    document.getElementById("app")!.innerHTML = `<div class="boot">작업 내용을 불러오는 중…</div>`;
+    return;
+  }
   const page =
+    r === "help" ? pageHelp() :
     !ws ? pageNoWs() :
     r === "sources" ? pageSources() :
     r === "conditions" ? pageConditions() :
@@ -203,16 +214,18 @@ function render() {
   document.getElementById("app")!.innerHTML = `
   <div class="scrim ${ui.navOpen ? "show" : ""}" data-act="nav-close"></div>
   <aside class="side ${ui.navOpen ? "open" : ""}" aria-label="업무 메뉴">
-    <div class="brand"><small>재기지원 사업</small><b>규정 작성 지원</b><span>데모·템플릿 모드</span></div>
+    <div class="brand"><small>재기지원 사업</small><b>규정 작성 지원</b><span>v${esc(APP_VERSION)}</span></div>
     <nav>${NAV.map(([h, label, step]) => `<a href="#/${h}" class="${route() === h ? "on" : ""}"><i>${step}</i>${label}${h === "review" && issues.length ? `<em>${issues.length}</em>` : ""}</a>`).join("")}</nav>
-    <p class="side-foot">모든 결과는 검토용 초안입니다. 기관 승인·법적 적합성을 보장하지 않습니다.</p>
+    <div class="side-file">${btn("작업 파일 저장", "export", { v: "sub", sm: true, data: 'data-t="backup"' })}<a class="btn ghost sm side-open" href="#/export">작업 파일 열기</a></div>
+    <p class="side-foot">모든 결과는 검토용 초안입니다. 기관 승인·법적 적합성을 보장하지 않습니다. 작업 내용은 이 PC 밖으로 전송되지 않습니다.</p>
   </aside>
   <div class="main">
     <header class="top">
       <button class="hamb" data-act="nav-toggle" aria-label="메뉴 열기" aria-expanded="${ui.navOpen}">☰</button>
-      <div class="title"><b>${esc(ws?.project.name ?? "작업공간 없음")}</b>${ws ? `<small>버전 ${esc(currentVersionLabel(ws))}</small>` : ""}</div>
-      <label class="ws-sel"><span class="ws-l">작업공간</span> <select data-change="kind"><option value="main" ${kind === "main" ? "selected" : ""}>실제 작업공간</option><option value="sample" ${kind === "sample" ? "selected" : ""}>샘플(시연용 가상 자료)</option></select></label>
-      <span class="mode">${badge("데모 모드 · 템플릿 작성", "amber", "AI 분석이 아닌 조문 템플릿과 구조화된 조건으로 작성합니다.")}</span>
+      <div class="title"><b>${esc(ws?.project.name ?? "작업공간 없음")}</b>${ws ? `<small>${ws.snapshots.length ? `버전 ${esc(currentVersionLabel(ws))}` : "저장된 버전 없음(작업본)"}</small>` : ""}</div>
+      <label class="ws-sel"><span class="ws-l">작업공간</span> <select data-change="kind"><option value="main" ${kind === "main" ? "selected" : ""}>실제 작업공간</option><option value="sample" ${kind === "sample" ? "selected" : ""}>연습용 샘플(가상 자료)</option></select></label>
+      <span class="mode">${kind === "sample" ? badge("연습용 샘플 · 가상 자료", "amber", "시연·연습용 가상 자료입니다. 실제 작업은 ‘실제 작업공간’에서 하세요.") : badge("템플릿 작성 · AI 미사용", "gray", "조문 템플릿과 확인된 사업 조건으로 작성합니다. 자료는 외부로 전송되지 않습니다.")}</span>
+      ${ws ? btn("작업 파일 저장", "export", { v: "sec", sm: true, data: 'data-t="backup"', title: "작업 전체를 .json 파일로 내려받아 보관·이동합니다" }).replace('class="btn', 'class="top-file btn') : ""}
       <span class="save ${saveMsg.startsWith("저장 실패") ? "err" : ""}">${esc(saveMsg)}</span>
     </header>
     ${ws?.isDemo ? `<div class="demo-bar">${DEMO_NOTICE} 화면과 내보낸 파일에 같은 표시가 유지됩니다.</div>` : ""}
@@ -240,7 +253,28 @@ const card = (title: string, body: string, actions = "") =>
   `<section class="card">${title || actions ? `<header><h2>${title}</h2><div class="row">${actions}</div></header>` : ""}<div class="cb">${body}</div></section>`;
 
 function pageNoWs() {
-  return `${header("프로젝트 현황")}<div class="empty"><b>샘플 프로젝트가 아직 없습니다</b><p>가상 운영계획과 가상 참고 규정으로 전체 흐름을 시연합니다.</p>${btn("샘플 프로젝트 시작", "start-sample", { v: "pri" })}</div>`;
+  return `${header("프로젝트 현황")}<div class="empty"><b>연습용 샘플이 아직 없습니다</b><p>가상 운영계획과 가상 참고 규정으로 전체 흐름을 연습합니다. 실제 작업공간에는 영향이 없습니다.</p>${btn("연습용 샘플 열기", "start-sample", { v: "pri" })}</div>`;
+}
+
+/** 작업 파일 보관 알림: 실제 작업공간에 내용이 있는데 파일로 저장한 지 오래되었으면 표시 */
+function fileReminder(w: Workspace): string {
+  if (w.isDemo || (!w.docs.length && !w.clauses.length)) return "";
+  const last = w.project.lastFileSavedAt;
+  const days = last ? (Date.now() - Date.parse(last)) / 864e5 : Infinity;
+  const changedSince = !last || Date.parse(w.project.updatedAt) > Date.parse(last);
+  if (!changedSince || days < 1) return "";
+  return `<div class="notice file-note"><div><b>${last ? `마지막 작업 파일 저장: ${formatDate(last)}` : "아직 작업 파일로 저장한 적이 없습니다."}</b><br>작업 내용은 이 PC의 이 브라우저에만 있습니다. 브라우저 데이터를 지우거나 PC를 바꾸면 사라지니 파일로 보관하세요.</div>${btn("작업 파일 저장", "export", { v: "pri", sm: true, data: 'data-t="backup"' })}</div>`;
+}
+
+function onboarding(w: Workspace): string {
+  if (w.isDemo || w.docs.length || w.clauses.length) return "";
+  return card("시작하기", `<ol class="steps">
+    <li><b>운영계획(안) 등록</b> — <a href="#/sources">자료 관리</a>에서 PDF·DOCX·TXT를 올리거나 본문을 붙여넣습니다. ‘- 지원 한도: 1억원’처럼 ‘항목: 값’ 줄이 있으면 사업 조건을 자동으로 찾습니다.</li>
+    <li><b>근거 자료 등록</b> — 창업지원법·시행령, 통합관리지침·세부관리기준, 유사사업 규정을 올립니다. 원문이 없으면 목록만 등록해도 됩니다(‘원문 미등록’으로 표시).</li>
+    <li><b>사업 조건 확인</b> — 추출된 금액·기간·규모를 확인하고 확정합니다. 모르는 값은 비워 두면 초안에 【확인 필요】로 남습니다.</li>
+    <li><b>초안 작성과 검토</b> — 규정 편집기에서 운영규칙·요령 초안을 만들고 조항별로 고치고 검토 완료 처리합니다.</li>
+    <li><b>계획 변경 반영</b> — 예산이 확정되면 새 계획(안)을 올려 바뀐 조항만 신구대비표로 확인합니다.</li></ol>
+    <div class="row">${btn("자료 등록 시작", "go-sources", { v: "pri" })}<a class="btn sec" href="#/help">사용 안내 보기</a>${btn("연습용 샘플로 먼저 해 보기", "start-sample", { v: "ghost" })}<a class="btn ghost" href="#/export">작업 파일 열기</a></div>`);
 }
 
 // ───────────────────────── 현황
@@ -258,13 +292,14 @@ function pageDashboard() {
       `<a class="link" href="#/editor" data-act="open-doc" data-doc="${dk}">편집기 열기 →</a>`);
   };
   return `${header("프로젝트 현황", "자료 입력 → 조건 확인 → 근거 연결 → 조문 초안 작성 → 검수 → 변경 반영 → 다운로드",
-    `${btn(kind === "sample" ? "샘플 프로젝트 다시 시작" : "샘플 프로젝트 시작", "start-sample", { v: "sub" })}${kind === "sample" ? btn("실제 작업공간으로", "to-main", { v: "ghost" }) : ""}`)}
+    kind === "sample" ? `${btn("연습용 샘플 다시 시작", "start-sample", { v: "sub" })}${btn("실제 작업공간으로", "to-main", { v: "pri" })}` : "")}
+  ${fileReminder(w)}${onboarding(w)}
   ${card("", `<div class="split"><div><small class="muted">현재 작업 단계</small><ol class="stages">${STAGES.map((s, i) => `<li class="${i < m.stage ? "done" : i === m.stage ? "now" : ""}">${i + 1}. ${s}</li>`).join("")}</ol><small class="muted">최근 수정 ${formatDate(w.project.updatedAt)}</small></div>
     <div class="row"><a class="btn sec" href="#/sources">자료 등록</a><a class="btn sec" href="#/editor">초안 작성</a><a class="btn sec" href="#/review">검토 계속하기</a><a class="btn pri" href="#/${next[0]}">다음 단계: ${next[1]}</a></div></div>`)}
   <div class="stats">${stat("등록 자료", m.docCount, `원문 등록 ${m.registeredDocCount}건 · 미등록 ${m.docCount - m.registeredDocCount}건`, "sources")}${stat("근거 미확인 조항", m.unverifiedClauses, "원문 미등록·근거 미연결", "review", true)}${stat("미확정 사업 조건", m.unconfirmedConditions, `전체 ${m.totalConditions}개 조건 중`, "conditions", true)}${stat("검토 목록", m.issueCount, `결정 대기 제안 ${m.pendingSuggestions}건`, "review", true)}</div>
   <div class="g2">${prog("rule")}${prog("manual")}</div>
   ${card("세부사업 구성과 작성 전략", `<div class="g3">${w.programs.map((p) => `<div class="box"><div class="split"><b>${esc(p.name)}</b>${p.confirmedByAgency ? badge("기관 확인", "green") : badge("기관 확인 전", "amber")}</div><div class="strat">${STRATEGY_LABEL[p.strategy]}</div><small class="muted">${esc(p.strategyNote)}</small></div>`).join("")}</div><p class="muted sm">운영규칙은 3개 세부사업 공통 1부, 운영요령은 공통편과 사업별 3개 편으로 구성된 1부입니다(기획안 기준 초기 목차, 편집 가능).</p>`, badge(PLAN_BASIS_NOTICE, "amber"))}
-  <div class="notice gray">데이터는 이 브라우저(localStorage)에만 저장됩니다. 다른 PC로 옮기거나 브라우저 데이터를 지우기 전에 ‘작업 백업.json’을 받아 두세요. AI 작성 제안과 PDF·DOCX 원문 추출은 이 버전의 범위 밖입니다.</div>`;
+  <div class="notice gray">작업 내용은 ${esc(BACKEND_LABEL[backend])}에 자동 저장되며 외부로 전송되지 않습니다. 다른 PC로 옮기거나 동료에게 전달할 때는 ‘작업 파일 저장’으로 받은 .json 파일을 ‘작업 파일 열기’로 엽니다.</div>`;
 }
 
 // ───────────────────────── 자료
@@ -300,10 +335,9 @@ const readMeta = (p: string) => ({
   isPublic: (document.getElementById(`${p}public`) as HTMLInputElement).checked,
 });
 function addDocForm() {
-  return card("자료 등록", `${metaFields("n-", { title: "", type: "plan", version: "", effectiveDate: "", url: "", isPublic: false, applicability: "unchecked" })}
-  <div class="supp">${badge("지원: TXT 파일 · 원문 붙여넣기", "green")} ${badge("PDF·DOCX는 텍스트를 복사해 붙여넣기", "gray")} ${badge("HWP·OCR 미지원", "gray")}</div>
-  <label class="blk">TXT 파일 불러오기 <input type="file" accept=".txt,.md" data-change="txt-file"></label>
-  <label class="blk">원문(줄 단위로 원문 조각이 만들어집니다. 운영계획은 ‘- 지원 한도: 1억원’ 형식이면 조건을 추출합니다)<textarea id="n-text" rows="10">${esc(ui.addText)}</textarea></label>
+  return card("자료 등록", `${metaFields("n-", ui.addMeta ?? { title: "", type: "plan", version: "", effectiveDate: "", url: "", isPublic: false, applicability: "unchecked" })}
+  ${fileInputBlock("src-file", ui.addPages)}
+  <label class="blk">원문(파일에서 읽은 내용이 여기에 표시됩니다. 직접 붙여넣어도 됩니다. 운영계획은 ‘- 지원 한도: 1억원’ 형식이면 조건을 추출합니다)<textarea id="n-text" rows="10">${esc(ui.addText)}</textarea></label>
   <div class="row">${btn("원문과 함께 등록", "save-doc", { v: "pri" })}${btn("목록만 등록(원문 미등록)", "save-doc-empty")}</div>`, btn("닫기", "close-add", { v: "ghost", sm: true }));
 }
 function docDetail(id: string) {
@@ -320,7 +354,16 @@ function docDetail(id: string) {
     ${d.type === "background" ? `<div class="notice gray">배경자료는 조항의 법적 근거로 연결되지 않습니다.</div>` : ""}${extract}`,
     `${btn("정보 저장", "save-meta", { v: "pri", sm: true, data: `data-id="${id}"` })}${btn("삭제", "del-doc", { v: "danger", sm: true, data: `data-id="${id}"` })}`)}
   ${card(`원문 조각 ${chunks.length}개`, chunks.length ? `<ol class="chunks">${chunks.map((c) => `<li><div class="split"><small class="loc">${esc(c.locator)}</small>${ui.editChunk === c.id ? "" : `<button class="lnk" data-act="edit-chunk" data-id="${c.id}">수정</button>`}</div>${ui.editChunk === c.id ? `<textarea id="chunk-text" rows="3">${esc(c.text)}</textarea><div class="row">${btn("저장", "save-chunk", { v: "pri", sm: true, data: `data-id="${c.id}"` })}${btn("취소", "cancel-chunk", { v: "ghost", sm: true })}</div>` : `<p>${esc(c.text)}</p>`}</li>`).join("")}</ol>` :
-    `<p class="muted">원문이 등록되지 않았습니다. 아래에 붙여넣어 등록하면 이 자료를 근거로 확인할 수 있습니다.</p><textarea id="reg-text" rows="6"></textarea>${btn("원문 등록", "reg-text", { v: "pri", data: `data-id="${id}"` })}`)}`;
+    `<p class="muted">원문이 등록되지 않았습니다. 파일을 올리거나 붙여넣어 등록하면 이 자료를 근거로 확인할 수 있습니다.</p>${regBlock(id)}`)}
+  ${chunks.length ? `<details class="card rereg"><summary>원문 교체(새 버전 등록)</summary><div class="cb"><p class="muted sm">법령·지침이 개정되었을 때 새 원문으로 바꿉니다. 원문 버전이 올라가고, 이 자료에 연결된 검토 완료 조항은 ‘재검토 필요’로 바뀝니다. 기존 조각 연결은 끊어질 수 있습니다.</p>${regBlock(id)}</div></details>` : ""}`;
+}
+function fileInputBlock(change: string, cur: typeof ui.addPages) {
+  return `<div class="supp">${badge("지원: PDF(텍스트) · DOCX · TXT · 붙여넣기", "green")} ${badge("HWP·스캔 PDF(OCR) 미지원", "gray")}</div>
+  <label class="blk">파일 불러오기 <input type="file" accept=".pdf,.docx,.txt,.md,.hwp,.hwpx" data-change="${change}" ${ui.importing ? "disabled" : ""}></label>
+  ${ui.importing ? `<div class="notice blue">원문을 읽는 중입니다… (파일은 이 PC 안에서만 처리됩니다)</div>` : cur ? `<div class="notice blue">‘${esc(cur.fileName)}’ 읽기 완료 — ${esc(cur.note)}</div>` : ""}`;
+}
+function regBlock(id: string) {
+  return `${fileInputBlock("reg-file", ui.regPages)}<textarea id="reg-text" rows="6">${esc(ui.regPages?.text ?? "")}</textarea>${btn("원문 등록", "reg-text", { v: "pri", data: `data-id="${id}"` })}`;
 }
 
 // ───────────────────────── 조건
@@ -386,7 +429,7 @@ function clausePanel(id: string, no?: number) {
   const sec = w.sections.find((s) => s.id === c.sectionId);
   const sugs = w.suggestions.filter((s) => s.clauseId === id && (s.status === "pending" || s.status === "held"));
   return `<div class="split top-al"><div><small class="muted">${DOC_KIND_LABEL[c.docKind]} · ${sec ? esc(sectionHeading(c.docKind, sec.order, sec.title)) : ""}</small><h1 class="ct">제${no ?? "?"}조(${esc(c.title)})</h1>
-    <div class="row tight">${badge(c.origin === "template" ? "템플릿 작성(데모)" : c.origin === "ai" ? "AI 제안 반영" : "담당자 작성", c.origin === "user" ? "gray" : "blue")}${c.userEdited && c.origin !== "user" ? badge("담당자 수정") : ""}<small class="muted">ID ${c.id}</small></div></div>
+    <div class="row tight">${badge(c.origin === "template" ? "템플릿 작성" : c.origin === "ai" ? "AI 제안 반영" : "담당자 작성", c.origin === "user" ? "gray" : "blue")}${c.userEdited && c.origin !== "user" ? badge("담당자 수정") : ""}<small class="muted" title="조항 ID ${c.id} (순서가 바뀌어도 유지)">수정 ${formatDate(c.updatedAt)}</small></div></div>
     <div><div class="seg rv">${(["pending", "needs_fix", "approved"] as ReviewStatus[]).map((s) => `<button class="${c.reviewStatus === s ? `on r-${s}` : ""}" data-act="review" data-s="${s}" ${dirty && s === "approved" ? "disabled title=\"저장 후 검토 완료 처리할 수 있습니다\"" : ""}>${REVIEW_LABEL[s]}</button>`).join("")}</div>${c.reviewStatus === "needs_rereview" ? badge("재검토 필요 — 다시 확인 후 ‘검토 완료’", "amber") : ""}</div></div>
   <section class="card"><div class="cb">
     <label class="blk">조 제목<input id="cl-title" value="${esc(d.title)}"></label>
@@ -543,6 +586,54 @@ function compareSection() {
 }
 
 // ───────────────────────── 내보내기
+// ───────────────────────── 사용 안내
+function pageHelp() {
+  const sec = (t: string, b: string) => card(t, b);
+  return `${header("사용 안내", "재기지원 사업 운영규칙·운영요령 검토용 초안 작성 도구 사용법")}
+  ${sec("한눈에 보기", `<ol class="steps">
+    <li><b>자료 관리</b>: 운영계획(안)과 근거 자료(법령·지침·유사사업 규정)를 등록합니다.</li>
+    <li><b>사업 조건 확인</b>: 운영계획(안)에서 찾은 금액·기간·규모 등을 확인하고 확정합니다.</li>
+    <li><b>규정 편집기</b>: 운영규칙 1부(8개 장)·운영요령 1부(공통편+사업별 3개 편) 초안을 만들고 조항별로 고칩니다.</li>
+    <li><b>검토 목록</b>: 근거가 없거나 값이 맞지 않는 조항을 모아 봅니다. 누르면 해당 조항으로 이동합니다.</li>
+    <li><b>계획 변경·신구대비표</b>: 새 계획(안)을 올리면 바뀐 조건과 연결된 조항만 수정안을 만들고, 반영·보류를 고릅니다.</li>
+    <li><b>내보내기</b>: 운영규칙·운영요령·신구대비표(Word), 근거 매핑표(CSV)를 내려받습니다.</li></ol>`)}
+  ${sec("자료 준비 요령", `<ul class="ul">
+    <li><b>지원 형식</b>: PDF(글자가 선택되는 PDF), DOCX, TXT, 본문 붙여넣기. 스캔 이미지 PDF와 HWP는 읽지 못합니다 — 한글(HWP)에서 ‘다른 이름으로 저장 → DOCX 또는 PDF’로 저장하거나 본문을 복사해 붙여넣으세요.</li>
+    <li><b>법령·시행령</b>: 국가법령정보센터(law.go.kr)에서 PDF로 저장하거나 본문을 복사해 붙여넣습니다. 버전·시행일을 함께 적어 두면 근거 확인이 쉽습니다.</li>
+    <li><b>운영계획(안)</b>: 아래처럼 ‘항목: 값’ 형식의 줄이 있으면 사업 조건을 자동으로 찾습니다. 사업명 제목 줄(예: ‘2. 재도전성공패키지’) 아래에 적습니다.
+      <pre class="ex">2. 재도전성공패키지
+- 지원 대상: 폐업 경험이 있는 재창업 예정자
+- 지원 한도(기업당 최대): 1억원
+- 선정 규모: 185개사 내외
+- 지원 기간: 협약일부터 10개월 이내</pre>
+      값을 모르면 ‘미정’으로 두면 빈 값으로 처리되어 초안에 【확인 필요】로 남습니다.</li>
+    <li><b>원문 없이 목록만</b>: 아직 원문이 없는 법령·지침도 목록에 올려 두면 ‘원문 미등록’으로 표시되어 나중에 채울 대상이 보입니다.</li></ul>`)}
+  ${sec("표시의 의미", `<table class="tbl"><thead><tr><th>표시</th><th>뜻</th></tr></thead><tbody>
+    <tr><td><span class="mark">【확인 필요: …】</span></td><td>근거 원문이나 사업 조건 값이 없어 담당자 확인이 필요한 부분. 내보낸 파일에도 그대로 남습니다.</td></tr>
+    <tr><td><span class="mark">【미확정】</span></td><td>값은 있으나 아직 확정하지 않은 사업 조건.</td></tr>
+    <tr><td>${badge("적용 근거 후보", "navy")}</td><td>법령·지침 원문에서 찾은 근거 후보. 실제 적용 여부는 담당자가 확인합니다.</td></tr>
+    <tr><td>${badge("유사사업 참고", "purple")}</td><td>유사사업 규정. 참고용이며 이번 사업의 현행 규정·의무 기준이 아닙니다.</td></tr>
+    <tr><td>${badge("운영계획 반영", "blue")}</td><td>운영계획(안)의 조건이 조문에 들어간 근거.</td></tr>
+    <tr><td>${badge("작성 제안·근거 확인 필요", "amber")}</td><td>연결된 근거 원문이 없는 작성 제안 문구.</td></tr>
+    <tr><td>${reviewBadge("needs_rereview")}</td><td>검토 완료 후 조항이나 근거 원문이 바뀌어 다시 확인이 필요한 조항.</td></tr></tbody></table>`)}
+  ${sec("계획(안)이 바뀌었을 때", `<ul class="ul">
+    <li>‘계획 변경·신구대비표’에서 새 계획(안)을 고르거나 ‘주요 조건 직접 변경’으로 값을 바꿉니다.</li>
+    <li>바뀐 조건과 <b>연결된 조항만</b> 수정안이 만들어집니다. 같은 숫자가 있어도 연결되지 않은 조항은 바꾸지 않으며, 그런 조항 수를 따로 알려 줍니다.</li>
+    <li>담당자가 고친 문장은 유지한 채 값만 바뀝니다. 수정안을 만든 뒤 조항을 다시 고쳤다면 그 수정안은 반영되지 않습니다.</li>
+    <li>반영·보류를 고른 뒤 ‘반영 결과를 새 버전으로 저장’을 누르고 신구대비표를 내려받습니다.</li></ul>`)}
+  ${sec("데이터 보관과 이동", `<ul class="ul">
+    <li>작업 내용은 <b>이 PC의 이 브라우저 안</b>(${esc(BACKEND_LABEL[backend])})에 자동 저장됩니다. 인터넷으로 전송되지 않습니다.</li>
+    <li>다른 PC로 옮기거나 동료에게 넘길 때: 왼쪽 메뉴 아래 <b>작업 파일 저장</b>으로 .json 파일을 받고, 다른 PC에서 <b>내보내기·작업 파일 → 작업 파일 열기</b>로 엽니다.</li>
+    <li>브라우저 방문 기록·사이트 데이터를 지우면 저장된 작업도 지워집니다. 작업 파일을 정기적으로 저장해 두세요.</li>
+    <li>작업 파일과 내려받은 문서에는 기관 내부 자료가 들어 있을 수 있으니 공개된 곳에 올리지 마세요.</li>
+    <li>사생활 보호(시크릿) 창에서는 창을 닫으면 작업이 사라집니다.</li></ul>`)}
+  ${sec("주의사항", `<ul class="ul">
+    <li>모든 결과는 <b>검토용 초안</b>입니다. 기관 승인이나 법적 적합성을 보장하지 않으며, 조문은 법령 원문과 대조해 확정해야 합니다.</li>
+    <li>이 도구는 원문이 없는 법령 조문 번호를 만들지 않고, 확인되지 않은 금액·기간을 채우지 않습니다.</li>
+    <li>연습용 샘플의 계획안·규정·수치는 모두 가상 자료입니다.</li></ul>`)}
+  ${sec("지원 환경과 버전", `<p class="sm">Chrome·Edge 최신 버전 권장(Windows PC), 태블릿·휴대폰 브라우저에서도 사용할 수 있습니다. 인터넷 연결 없이 동작합니다.<br>버전 v${esc(APP_VERSION)} · 저장소: ${esc(BACKEND_LABEL[backend])}</p>`)}`;
+}
+
 function pageExport(issues: Issue[]) {
   const w = ws!;
   const items: [string, string, string, boolean][] = [
@@ -550,13 +641,76 @@ function pageExport(issues: Issue[]) {
     ["manual", "운영요령 초안.docx", "공통편 + 사업별 3개 편 운영요령 1부 + 근거 목록 부록", w.clauses.some((c) => c.docKind === "manual")],
     ["compare", "신구대비표.docx", "가장 최근 계획 변경 기준(다른 기준은 계획 변경 화면에서 선택)", w.changeSets.length > 0],
     ["csv", "근거 매핑표.csv", "조항 × 근거(역할·자료·버전·위치·인용·원문 상태·연결 조건), UTF-8 BOM 포함", w.clauses.length > 0],
-    ["backup", "작업 백업.json", "작업공간 전체(자료 원문 포함). 비공개 자료가 있을 수 있으니 보관에 주의", true],
+    ["backup", "작업 파일(.json)", "작업공간 전체(자료 원문·조항·버전 포함). 다른 PC로 옮기거나 보관할 때 사용. 기관 내부 자료가 포함되므로 보관·전달에 주의", true],
   ];
   return `${header("내보내기·백업", "모든 파일에 프로젝트명·버전·작성일·검토용 초안 표시가 들어가며, 【확인 필요】·【미확정】 표시도 유지됩니다.")}
   ${card("", `<div class="row">현재 버전 <b>${esc(currentVersionLabel(w))}</b> · 검토 목록 <b>${issues.length}</b>건 ${w.isDemo ? badge("파일에 ‘시연용 가상 자료’ 표시", "amber") : ""}</div>`)}
   ${card("파일 내려받기", `<ul class="dl">${items.map(([t, n, d, ok]) => `<li><div><b class="navy">${n}</b><small class="muted">${d}</small></div>${btn(ok ? "다운로드" : t === "compare" ? "계획 변경 이력 없음" : "초안 없음", "export", { v: ok ? "pri" : "sec", data: `data-t="${t}"`, disabled: !ok })}</li>`).join("")}</ul>`)}
-  ${card("백업 복원", `<p class="muted sm">작업 백업.json을 선택하면 형식을 확인한 뒤 현재 작업공간(${kind === "sample" ? "샘플" : "실제"})을 덮어씁니다.</p><input type="file" accept=".json" data-change="restore">`)}
-  ${card("데이터 초기화", `<p class="muted sm">데이터는 이 브라우저의 localStorage에만 저장됩니다. 브라우저 데이터를 지우면 사라지므로 백업을 권장합니다.</p>${btn(kind === "sample" ? "샘플을 처음 상태로" : "실제 작업공간 초기화", "reset", { v: "danger" })}`)}`;
+  ${card("작업 파일 열기", `<p class="muted sm">다른 PC나 동료에게서 받은 작업 파일(.json)을 열면 형식을 확인한 뒤 현재 작업공간(${kind === "sample" ? "연습용 샘플" : "실제 작업공간"})을 덮어씁니다. 열기 전에 지금 작업을 먼저 파일로 저장해 두세요.</p><input type="file" accept=".json,application/json" data-change="restore">`)}
+  ${card("데이터 보관 위치와 초기화", `<p class="muted sm">작업 내용은 <b>${esc(BACKEND_LABEL[backend])}</b>에 자동 저장되며 외부로 전송되지 않습니다. 브라우저 데이터 삭제·PC 교체 시 사라지므로 ‘작업 파일 저장’으로 정기적으로 보관하세요.</p>${btn(kind === "sample" ? "연습용 샘플을 처음 상태로" : "실제 작업공간 초기화", "reset", { v: "danger" })}`)}`;
+}
+
+// ───────────────────────── 원문 파일 읽기 (브라우저 안에서 처리, 외부 전송 없음)
+const scriptCache: Record<string, Promise<void>> = {};
+function loadScript(name: string): Promise<void> {
+  scriptCache[name] ??= new Promise<void>((res, rej) => {
+    const el = document.createElement("script");
+    el.src = `assets/${name}.js?v=${APP_VERSION}`;
+    el.onload = () => res();
+    el.onerror = () => {
+      delete scriptCache[name];
+      rej(new Error(name));
+    };
+    document.head.appendChild(el);
+  });
+  return scriptCache[name];
+}
+type ReadResult = { ok: true; text: string; pages?: string[]; format: "pdf" | "docx" | "txt"; note: string } | { ok: false; error: string };
+const MAX_FILE = 30 * 1024 * 1024;
+async function readSourceFile(f: File): Promise<ReadResult> {
+  const ext = (f.name.toLowerCase().match(/\.([a-z0-9]+)$/) ?? [])[1] ?? "";
+  if (f.size > MAX_FILE) return { ok: false, error: "파일이 30MB를 넘습니다. 필요한 부분만 붙여넣으세요." };
+  if (ext === "hwp" || ext === "hwpx") return { ok: false, error: "HWP는 읽을 수 없습니다. 한글에서 ‘다른 이름으로 저장 → PDF 또는 DOCX’로 저장하거나 본문을 복사해 붙여넣으세요." };
+  const buf = await f.arrayBuffer();
+  if (ext === "txt" || ext === "md") {
+    let text = new TextDecoder("utf-8").decode(buf);
+    if (text.includes("�")) {
+      try {
+        text = new TextDecoder("euc-kr").decode(buf);
+      } catch {}
+    }
+    text = text.replace(/^﻿/, "");
+    return text.trim() ? { ok: true, text, format: "txt", note: "TXT — 절·문단 단위로 위치를 표시합니다." } : { ok: false, error: "파일에 글자가 없습니다." };
+  }
+  if (ext === "docx") {
+    try {
+      await loadScript("import-docx");
+      const text = await (globalThis as unknown as { reguflowDocx: (b: ArrayBuffer) => Promise<string> }).reguflowDocx(buf);
+      return text.trim() ? { ok: true, text, format: "docx", note: "DOCX — 페이지 정보가 없어 절·문단 단위로 위치를 표시합니다." } : { ok: false, error: "DOCX에서 읽은 글자가 없습니다." };
+    } catch {
+      return { ok: false, error: "DOCX 파일을 읽지 못했습니다. 손상되었거나 DOCX 형식이 아닐 수 있습니다." };
+    }
+  }
+  if (ext === "pdf") {
+    try {
+      await loadScript("import-pdf");
+      const pages = await (globalThis as unknown as { reguflowPdf: (b: ArrayBuffer) => Promise<string[]> }).reguflowPdf(buf);
+      const chars = pages.join("").replace(/\s+/g, "").length;
+      if (chars < Math.max(20, pages.length * 10)) return { ok: false, error: "PDF에서 글자를 찾지 못했습니다(스캔 이미지 PDF로 보입니다). 글자가 선택되는 PDF나 DOCX를 올리거나 본문을 붙여넣으세요." };
+      return { ok: true, text: pages.join("\n\n"), pages, format: "pdf", note: `PDF ${pages.length}쪽 — 페이지 번호를 위치로 보존합니다.` };
+    } catch {
+      return { ok: false, error: "PDF 파일을 읽지 못했습니다. 암호가 걸렸거나 손상된 파일일 수 있습니다." };
+    }
+  }
+  return { ok: false, error: `지원하지 않는 형식입니다(.${ext || "?"}). PDF·DOCX·TXT를 올리거나 본문을 붙여넣으세요.` };
+}
+/** 읽은 원문을 자료에 등록. 담당자가 내용을 고치지 않았으면 PDF 페이지 정보를 그대로 쓴다. */
+function applyText(w: Workspace, docId: string, text: string, imp: typeof ui.addPages) {
+  if (imp && imp.text === text) {
+    setDocText(w, docId, imp.pages.length ? { pages: imp.pages, format: imp.format, fileName: imp.fileName, parseNote: imp.note } : { text, format: imp.format, fileName: imp.fileName, parseNote: imp.note });
+  } else {
+    setDocText(w, docId, { text, format: "paste", parseNote: imp ? "파일에서 읽은 뒤 담당자가 내용을 수정함 — 절·문단 단위 위치" : undefined });
+  }
 }
 
 // ───────────────────────── 이벤트
@@ -581,19 +735,27 @@ async function exportFile(t: string) {
       return download(blob, `${p}신구대비표_${d}.docx`);
     }
     if (t === "csv") return download(buildEvidenceCsv(w), `${p}근거 매핑표_${d}.csv`, "text/csv;charset=utf-8");
-    if (t === "backup") return download(JSON.stringify(w, null, 2), `${p}작업 백업_${d}.json`, "application/json");
+    if (t === "backup") {
+      const savedAt = new Date().toISOString();
+      const copy = { ...w, project: { ...w.project, lastFileSavedAt: savedAt } };
+      download(JSON.stringify(copy, null, 2), `${w.project.name.replace(/[\\/:*?"<>|]/g, "").slice(0, 40) || "작업"}_작업파일_${d}.json`, "application/json");
+      ws = { ...w, project: { ...w.project, lastFileSavedAt: savedAt } };
+      persist();
+      render();
+      return;
+    }
   } catch {
     notify("파일을 만들지 못했습니다.", "error");
   }
 }
 
 function switchKind(k: Kind) {
-  kind = k;
-  try {
-    localStorage.setItem(KIND_KEY, k);
-  } catch {}
-  ws = loadWs(k);
-  if (ws && k === "main" && !safeGet(wsKey("main"))) persist();
+  setKind(k);
+  ws = store[k];
+  if (!ws && k === "main") {
+    ws = emptyWorkspace("main");
+    persist();
+  }
   ui.clauseId = null;
   ui.draft = null;
   ui.selectedDoc = null;
@@ -610,8 +772,7 @@ document.addEventListener("click", async (e) => {
   switch (a) {
     case "start-sample":
       if (kind === "sample" && ws && !confirm("샘플 프로젝트를 처음 상태로 다시 시작할까요? (실제 작업공간은 영향 없음)")) return;
-      kind = "sample";
-      try { localStorage.setItem(KIND_KEY, "sample"); } catch {}
+      setKind("sample");
       ws = buildSampleWorkspace();
       persist();
       ui.clauseId = null; ui.draft = null; ui.selectedDoc = null;
@@ -619,19 +780,25 @@ document.addEventListener("click", async (e) => {
       render();
       return;
     case "to-main": return switchKind("main");
+    case "go-sources": ui.addingDoc = true; ui.addText = ""; ui.addPages = null; ui.addMeta = null; location.hash = "#/sources"; return render();
     case "open-doc": ui.editDoc = el.dataset.doc as DocKind; ui.clauseId = null; return;
     // 자료
-    case "add-doc": ui.addingDoc = true; ui.addText = ""; return render();
+    case "add-doc": ui.addingDoc = true; ui.addText = ""; ui.addPages = null; ui.addMeta = null; return render();
     case "close-add": ui.addingDoc = false; return render();
-    case "sel-doc": ui.selectedDoc = id; ui.addingDoc = false; ui.editChunk = null; return render();
+    case "sel-doc": ui.selectedDoc = id; ui.addingDoc = false; ui.editChunk = null; ui.regPages = null; return render();
     case "save-doc":
     case "save-doc-empty": {
       const m = readMeta("n-");
       const text = a === "save-doc" ? (document.getElementById("n-text") as HTMLTextAreaElement).value : "";
       if (!m.title) return notify("문서명을 입력하세요.", "error");
-      if (a === "save-doc" && !text.trim()) return notify("원문을 붙여넣거나 TXT 파일을 불러오세요.", "error");
-      const nid = update((w) => addDoc(w, { ...m, text: text || undefined, format: text ? "paste" : undefined, isDemo: false, allowExternal: false }).id, text ? "자료와 원문을 등록했습니다." : "자료를 목록에 등록했습니다(원문 미등록).");
-      if (nid) { ui.addingDoc = false; ui.selectedDoc = nid; render(); }
+      if (a === "save-doc" && !text.trim()) return notify("파일을 불러오거나 원문을 붙여넣으세요.", "error");
+      const imp = ui.addPages;
+      const nid = update((w) => {
+        const d = addDoc(w, { ...m, isDemo: false, allowExternal: false });
+        if (text.trim()) applyText(w, d.id, text, imp);
+        return d.id;
+      }, text ? "자료와 원문을 등록했습니다." : "자료를 목록에 등록했습니다(원문 미등록).");
+      if (nid) { ui.addingDoc = false; ui.addPages = null; ui.addMeta = null; ui.addText = ""; ui.selectedDoc = nid; render(); }
       return;
     }
     case "save-meta": return void update((w) => updateDocMeta(w, id, readMeta("e-")), "자료 정보를 저장했습니다.");
@@ -640,7 +807,13 @@ document.addEventListener("click", async (e) => {
     case "edit-chunk": ui.editChunk = id; return render();
     case "cancel-chunk": ui.editChunk = null; return render();
     case "save-chunk": { const t = (document.getElementById("chunk-text") as HTMLTextAreaElement).value; ui.editChunk = null; return void update((w) => updateChunkText(w, id, t), "원문 조각을 수정했습니다(원문 버전 증가)."); }
-    case "reg-text": { const t = (document.getElementById("reg-text") as HTMLTextAreaElement).value; if (!t.trim()) return; return void update((w) => setDocText(w, id, { text: t, format: "paste" }), "원문을 등록했습니다."); }
+    case "reg-text": {
+      const t = (document.getElementById("reg-text") as HTMLTextAreaElement).value;
+      if (!t.trim()) return notify("파일을 불러오거나 원문을 붙여넣으세요.", "error");
+      const imp = ui.regPages;
+      if (update((w) => applyText(w, id, t, imp), "원문을 등록했습니다(원문 버전 증가).") !== undefined) { ui.regPages = null; render(); }
+      return;
+    }
     // 조건
     case "conds-done": {
       const n = ws!.conditions.filter((c) => c.status !== "confirmed" || !c.value.trim()).length;
@@ -708,7 +881,7 @@ document.addEventListener("click", async (e) => {
     // 내보내기
     case "export": return exportFile(el.dataset.t!);
     case "reset":
-      if (prompt(`현재 ${kind === "sample" ? "샘플" : "실제"} 작업공간의 모든 내용을 지웁니다. 계속하려면 ‘초기화’를 입력하세요.`) !== "초기화") return;
+      if (prompt(`현재 ${kind === "sample" ? "연습용 샘플" : "실제 작업공간"}의 모든 자료·조건·조항·버전을 지웁니다. 먼저 ‘작업 파일 저장’을 권장합니다. 계속하려면 ‘초기화’를 입력하세요.`) !== "초기화") return;
       ws = kind === "sample" ? buildSampleWorkspace() : emptyWorkspace("main");
       persist();
       ui.clauseId = null; ui.draft = null;
@@ -759,19 +932,34 @@ document.addEventListener("change", async (e) => {
   const id = t.dataset.id ?? "";
   switch (c) {
     case "kind": return switchKind(t.value as Kind);
-    case "txt-file": {
+    case "src-file":
+    case "reg-file": {
       const f = t.files?.[0];
       if (!f) return;
-      if (!/\.(txt|md)$/i.test(f.name)) return notify("TXT만 불러올 수 있습니다. PDF·DOCX는 본문을 복사해 붙여넣으세요.", "error");
-      const buf = await f.arrayBuffer();
-      let text = new TextDecoder("utf-8").decode(buf);
-      if (text.includes("�")) { try { text = new TextDecoder("euc-kr").decode(buf); } catch {} }
-      ui.addText = text.replace(/^﻿/, "");
-      const ta = document.getElementById("n-text") as HTMLTextAreaElement;
-      if (ta) ta.value = ui.addText;
-      const ti = document.getElementById("n-title") as HTMLInputElement;
-      if (ti && !ti.value) ti.value = f.name.replace(/\.[^.]+$/, "");
-      return notify("TXT 원문을 불러왔습니다. 확인 후 등록하세요.", "ok");
+      // 다시 그리기 전에 입력 중인 자료 정보(문서명·유형 등)를 보존
+      if (c === "src-file" && document.getElementById("n-title")) {
+        const m = readMeta("n-");
+        ui.addMeta = { ...m, title: m.title || f.name.replace(/\.[^.]+$/, "") };
+        ui.addText = (document.getElementById("n-text") as HTMLTextAreaElement)?.value ?? ui.addText;
+      }
+      ui.importing = true;
+      render();
+      const r = await readSourceFile(f);
+      ui.importing = false;
+      if (!r.ok) {
+        render();
+        return notify(`원문을 읽지 못했습니다: ${r.error}`, "error");
+      }
+      const imp = { pages: r.pages ?? [], text: r.text, format: r.format, fileName: f.name, note: r.note };
+      if (c === "src-file") {
+        ui.addPages = imp;
+        ui.addText = r.text;
+        render();
+      } else {
+        ui.regPages = imp;
+        render();
+      }
+      return notify("원문을 읽었습니다. 내용을 확인한 뒤 등록하세요.", "ok");
     }
     case "cond-val": return void update((w) => updateCondition(w, id, { value: t.value.trim() }));
     case "cond-status": return void update((w) => updateCondition(w, id, { status: t.value as CondStatus }));
@@ -792,12 +980,13 @@ document.addEventListener("change", async (e) => {
       try { parsed = JSON.parse(await f.text()); } catch { return notify("JSON 파일이 아닙니다.", "error"); }
       const v = validateWorkspace(parsed);
       if (!v.ok) return notify(v.error, "error");
-      if (!confirm(`‘${v.ws.project.name}’ 백업으로 현재 작업공간을 덮어쓸까요? 현재 내용은 사라집니다.`)) return;
+      if (!confirm(`작업 파일 ‘${v.ws.project.name}’(최근 수정 ${formatDate(v.ws.project.updatedAt)})로 현재 작업공간을 덮어쓸까요? 지금 내용은 사라집니다.`)) return;
       v.ws.kind = kind;
       ws = v.ws;
       persist();
       ui.clauseId = null; ui.draft = null;
-      notify("백업을 복원했습니다.", "ok");
+      t.value = "";
+      notify("작업 파일을 열었습니다.", "ok");
       return render();
     }
   }
@@ -812,5 +1001,28 @@ window.addEventListener("hashchange", () => {
   ui.navOpen = false;
   render();
 });
-if (ws && kind === "main" && !safeGet(wsKey("main"))) persist();
-render();
+// ───────────────────────── 시작
+async function boot() {
+  try {
+    const r = await initStorage();
+    store.main = asWorkspace(r.main);
+    store.sample = asWorkspace(r.sample);
+    if (!store.main) {
+      store.main = emptyWorkspace("main");
+      kind = "main";
+      ws = store.main;
+      persist();
+    }
+    kind = r.kind === "sample" && store.sample ? "sample" : "main";
+    ws = store[kind];
+    saveMsg = backend === "memory" ? "저장 불가 — 사생활 보호 창이면 일반 창으로 여세요" : "저장됨";
+    if (r.migrated) setTimeout(() => notify("이전 버전에서 저장한 작업을 새 저장소로 옮겼습니다.", "ok"), 300);
+  } catch {
+    store.main = emptyWorkspace("main");
+    ws = store.main;
+    saveMsg = "저장 실패 — 브라우저 저장소를 열 수 없습니다";
+  }
+  booted = true;
+  render();
+}
+boot();
