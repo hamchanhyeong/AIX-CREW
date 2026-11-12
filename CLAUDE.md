@@ -15,4 +15,5 @@ AIX-CREW 2026 부트캠프 기업 과제 수행 저장소.
 - 검증: `npm run typecheck`, `npm run lint`, `npm test`, `npm run build`, 브라우저 흐름 `node scripts/e2e-demo.mjs <URL>`.
 - 원칙: 원문 없는 법령 조문 번호·인용을 만들지 않는다. 미확정 값은 채우지 않고 【확인 필요】로 남긴다.
   유사사업 규정은 참고(현행 규정 아님), 배경자료는 근거로 연결하지 않는다. 계획 변경은 조건 ID↔조항 ID 연결로만 처리한다.
+- 제출용 HTML 한 장: `single/` 수정 후 `npm run build:html`로 루트 `index.html` 재생성, 검증 `node scripts/e2e-single.mjs`.
 - `data/`(작업 데이터)와 `.env.local`(API 키)은 커밋하지 않는다.

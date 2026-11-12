@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "build:html": "node scripts/build-single.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.8.0",
@@ -29,6 +30,7 @@
     "@types/node": "^22.20.5",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "esbuild": "^0.28.2",
     "eslint": "^9",
     "eslint-config-next": "15.5.29",
     "pdf-lib": "^1.17.1",

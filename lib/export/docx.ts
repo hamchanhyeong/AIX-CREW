@@ -124,7 +124,7 @@ function footer() {
   });
 }
 
-export async function buildRegulationDocx(ws: Workspace, docKind: DocKind): Promise<Buffer> {
+export function regulationDocument(ws: Workspace, docKind: DocKind): Document {
   const title = `재기지원 사업 ${DOC_KIND_LABEL[docKind]}(안)`;
   const nums = articleNumbers(ws, docKind);
   const children: (Paragraph | Table)[] = [...coverBlock(ws, title)];
@@ -178,7 +178,7 @@ export async function buildRegulationDocx(ws: Workspace, docKind: DocKind): Prom
     styles: styles(),
     sections: [{ properties: {}, footers: { default: footer() }, children }],
   });
-  return Packer.toBuffer(doc);
+  return doc;
 }
 
 const TYPE_BADGE: Record<CompareRow["changeType"], { text: string; fill: string }> = {
@@ -214,7 +214,7 @@ function diffParagraphs(before: string, after: string, side: "before" | "after")
   return [new Paragraph({ children: runs.length ? runs : [new TextRun({ text: "-", size: 18, font: FONT })] })];
 }
 
-export async function buildCompareDocx(ws: Workspace, rows: CompareRow[], basis: CompareBasis, basisDetail: string): Promise<Buffer> {
+export function compareDocument(ws: Workspace, rows: CompareRow[], basis: CompareBasis, basisDetail: string): Document {
   const title = "재기지원 사업 운영규칙·요령(안) 신구대비표";
   const children: (Paragraph | Table)[] = [...coverBlock(ws, title)];
   children.push(p(`비교 기준: ${BASIS_LABEL[basis.kind]}`, { bold: true }));
@@ -261,5 +261,14 @@ export async function buildCompareDocx(ws: Workspace, rows: CompareRow[], basis:
       },
     ],
   });
-  return Packer.toBuffer(doc);
+  return doc;
+}
+
+// 서버(Node): Buffer / 브라우저(index.html): Blob
+export async function buildRegulationDocx(ws: Workspace, docKind: DocKind): Promise<Buffer> {
+  return Packer.toBuffer(regulationDocument(ws, docKind));
+}
+
+export async function buildCompareDocx(ws: Workspace, rows: CompareRow[], basis: CompareBasis, basisDetail: string): Promise<Buffer> {
+  return Packer.toBuffer(compareDocument(ws, rows, basis, basisDetail));
 }
