@@ -33,7 +33,8 @@ function Editor() {
   const docKind: DocKind = sp.get("doc") === "manual" ? "manual" : "rule";
   const clauseParam = sp.get("clause");
   const [dirty, setDirty] = useState(false);
-  const [mobileTab, setMobileTab] = useState<"edit" | "evidence">("edit");
+  // 1279px 이하에서는 [목차 | 조항 편집 | 근거·검토] 탭으로 전환
+  const [mobileTab, setMobileTab] = useState<"toc" | "edit" | "evidence">("edit");
   const [showEvidence, setShowEvidence] = useState(true);
 
   const clauses = useMemo(() => orderedClauses(w, docKind), [w, docKind]);
@@ -48,6 +49,10 @@ function Editor() {
   const go = (doc: DocKind, clauseId?: string) => {
     if (dirty && !confirm("저장하지 않은 수정 내용이 있습니다. 이동하면 버려집니다. 계속할까요?")) return;
     setDirty(false);
+    if (clauseId) {
+      setMobileTab("edit");
+      window.scrollTo(0, 0);
+    }
     router.push(`/editor?doc=${doc}${clauseId ? `&clause=${clauseId}` : ""}`);
   };
 
@@ -58,9 +63,17 @@ function Editor() {
   const sections = w.sections.filter((s) => s.docKind === effectiveDoc).sort((a, b) => a.order - b.order);
 
   return (
-    <div className="-mx-5 -my-5 flex h-[calc(100vh-var(--hdr,57px))] min-h-[600px]">
+    <div className="-mx-3 -my-4 flex flex-col sm:-mx-5 sm:-my-5 xl:h-[calc(100vh-var(--hdr,57px))] xl:min-h-[600px] xl:flex-row">
+      {/* 탭(1279px 이하) */}
+      <div className="sticky top-[var(--hdr,57px)] z-10 flex gap-1 border-b border-gray-200 bg-white px-2 py-1.5 xl:hidden" role="tablist" aria-label="편집기 영역">
+        {([["toc", "목차"], ["edit", "조항 편집"], ["evidence", `근거·검토 ${selected ? issues.filter((i) => i.clauseId === selected.id).length : 0}`]] as const).map(([k, l]) => (
+          <button key={k} role="tab" aria-selected={mobileTab === k} className={cx("min-h-10 flex-1 rounded-md px-2 py-2 text-[13px]", mobileTab === k ? "bg-navy font-semibold text-white" : "text-gray-700")} onClick={() => { setMobileTab(k); window.scrollTo(0, 0); }}>
+            {l}
+          </button>
+        ))}
+      </div>
       {/* 목차 */}
-      <aside className="flex w-64 shrink-0 flex-col border-r border-gray-200 bg-white">
+      <aside className={cx("w-full shrink-0 flex-col border-gray-200 bg-white xl:flex xl:w-64 xl:border-r", mobileTab === "toc" ? "flex" : "hidden")}>
         <div className="flex gap-1 border-b border-gray-200 p-2" role="tablist" aria-label="문서 전환">
           {(["rule", "manual"] as DocKind[]).map((d) => (
             <button key={d} role="tab" aria-selected={effectiveDoc === d} onClick={() => go(d)} className={cx("flex-1 rounded-md px-2 py-1.5 text-[13px]", effectiveDoc === d ? "bg-navy font-semibold text-white" : "text-gray-600 hover:bg-gray-100")}>
@@ -68,7 +81,7 @@ function Editor() {
             </button>
           ))}
         </div>
-        <div className="flex-1 overflow-y-auto px-2 py-2">
+        <div className="flex-1 px-2 py-2 xl:overflow-y-auto">
           {sections.map((s, si) => {
             const prog = s.programId ? w.programs.find((p) => p.id === s.programId) : undefined;
             const inSec = clauses.filter((c) => c.sectionId === s.id);
@@ -76,7 +89,7 @@ function Editor() {
               <div key={s.id} className="mb-3">
                 <div className="group flex items-center gap-1 px-1">
                   <span className="flex-1 text-[12px] font-bold text-navy">{sectionHeading(effectiveDoc, s.order, s.title)}</span>
-                  <span className="hidden gap-0.5 group-hover:flex">
+                  <span className="flex gap-0.5 xl:hidden xl:group-hover:flex">
                     <button className="px-1 text-[11px] text-gray-500 hover:text-navy" title="이름 바꾸기" onClick={() => { const t = prompt("장·편 이름", s.title); if (t) update((x) => renameSection(x, s.id, t)); }}>✎</button>
                     <button className="px-1 text-[11px] text-gray-500 hover:text-navy disabled:opacity-30" disabled={si === 0} title="위로" onClick={() => update((x) => moveSection(x, s.id, -1))}>↑</button>
                     <button className="px-1 text-[11px] text-gray-500 hover:text-navy disabled:opacity-30" disabled={si === sections.length - 1} title="아래로" onClick={() => update((x) => moveSection(x, s.id, 1))}>↓</button>
@@ -92,7 +105,7 @@ function Editor() {
                       <li key={c.id}>
                         <button
                           onClick={() => go(effectiveDoc, c.id)}
-                          className={cx("flex w-full items-center gap-1.5 rounded px-2 py-1 text-left text-[13px]", selected?.id === c.id ? "bg-brand-50 font-semibold text-navy ring-1 ring-brand-100" : "text-gray-700 hover:bg-gray-50")}
+                          className={cx("flex w-full items-center gap-1.5 rounded px-2 py-2 text-left text-[14px] xl:py-1 xl:text-[13px]", selected?.id === c.id ? "bg-brand-50 font-semibold text-navy ring-1 ring-brand-100" : "text-gray-700 hover:bg-gray-50")}
                         >
                           <span className={cx("h-2 w-2 shrink-0 rounded-full", { approved: "bg-emerald-500", needs_fix: "bg-red-500", needs_rereview: "bg-amber-500", pending: "bg-gray-300" }[c.reviewStatus])} aria-hidden />
                           <span className="truncate">제{nums.get(c.id)}조({c.title})</span>
@@ -121,21 +134,17 @@ function Editor() {
       </aside>
 
       {/* 중앙 + 근거 */}
-      <div className="flex min-w-0 flex-1 flex-col">
-        <div className="flex items-center gap-2 border-b border-gray-200 bg-white px-4 py-1.5 xl:hidden">
-          <button className={cx("rounded px-2 py-1 text-[13px]", mobileTab === "edit" ? "bg-navy text-white" : "text-gray-700")} onClick={() => setMobileTab("edit")}>조항 편집</button>
-          <button className={cx("rounded px-2 py-1 text-[13px]", mobileTab === "evidence" ? "bg-navy text-white" : "text-gray-700")} onClick={() => setMobileTab("evidence")}>근거·검토사항</button>
-        </div>
+      <div className={cx("min-w-0 flex-1 flex-col xl:flex", mobileTab === "toc" ? "hidden" : "flex")}>
         <div className="flex min-h-0 flex-1">
-          <div className={cx("min-w-0 flex-1 overflow-y-auto px-5 py-4", mobileTab !== "edit" && "hidden xl:block")}>
+          <div className={cx("min-w-0 flex-1 px-3 py-4 sm:px-5 xl:overflow-y-auto", mobileTab !== "edit" && "hidden xl:block")}>
             {selected ? (
               <ClausePanel key={selected.id} clause={selected} number={nums.get(selected.id)} onDirty={setDirty} onSelect={(id) => go(effectiveDoc, id)} />
             ) : (
-              <Empty title="조항이 없습니다">왼쪽 목차에서 ‘+ 조항 추가’를 누르세요.</Empty>
+              <Empty title="조항이 없습니다">목차에서 ‘+ 조항 추가’를 누르세요.</Empty>
             )}
           </div>
           {selected && (
-            <aside className={cx("w-full shrink-0 overflow-y-auto border-l border-gray-200 bg-white xl:w-[380px]", mobileTab !== "evidence" && "hidden xl:block", !showEvidence && "xl:hidden")}>
+            <aside className={cx("w-full shrink-0 bg-white xl:w-[380px] xl:overflow-y-auto xl:border-l xl:border-gray-200", mobileTab !== "evidence" && "hidden xl:block", !showEvidence && "xl:hidden")}>
               <EvidencePanel key={selected.id} clause={selected} issues={issues.filter((i) => i.clauseId === selected.id)} />
             </aside>
           )}

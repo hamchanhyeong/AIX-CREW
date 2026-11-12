@@ -14,7 +14,7 @@ export function CompareTable({ rows, beforeLabel = "변경 전", afterLabel = "�
   if (!rows.length) return <p className="py-6 text-center text-[13px] text-gray-500">비교할 변경 사항이 없습니다.</p>;
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[1000px] border-collapse text-[13px]">
+      <table className="rtable cmp w-full border-collapse text-[13px] md:min-w-[1000px]">
         <thead>
           <tr className="bg-navy text-left text-[12px] text-white">
             <th className="w-44 px-2 py-2">문서 종류와 조항</th>

@@ -128,7 +128,7 @@ function NewChange({ onStarted }: { onStarted: (id: string) => void }) {
         {diffs.length === 0 ? (
           <p className="text-[13px] text-gray-500">현재 조건과 달라진 값이 없습니다.</p>
         ) : (
-          <table className="w-full text-[13px]">
+          <table className="rtable w-full text-[13px]">
             <thead>
               <tr className="border-b border-gray-200 text-left text-[12px] text-gray-500"><th className="py-1.5">조건</th><th>이전</th><th>신규</th><th>원문 위치</th><th>연결 조항</th></tr>
             </thead>
@@ -163,7 +163,7 @@ function DirectEditor({ value, onChange }: { value: Record<string, ProposedCondi
   const linked = w.conditions.filter((c) => w.clauses.some((x) => x.conditionIds.includes(c.id)));
   return (
     <div className="max-h-96 overflow-y-auto">
-      <table className="w-full text-[13px]">
+      <table className="rtable w-full text-[13px]">
         <thead>
           <tr className="border-b border-gray-200 text-left text-[12px] text-gray-500"><th className="py-1.5">조건</th><th>현재 값</th><th>새 값</th><th className="w-28">새 상태</th></tr>
         </thead>

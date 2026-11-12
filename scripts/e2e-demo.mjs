@@ -152,5 +152,43 @@ assert(true, "11. 보류된 조항이 검토 목록에 ‘조건 값 불일치�
 await page.goto(BASE);
 await shot("00-dashboard");
 
+// ── 반응형 점검: 5개 폭 × 8개 화면 가로 넘침 없음 (R21)
+const ROUTES = ["/", "/sources", "/conditions", "/editor", "/review", "/changes", "/export", "/settings"];
+const overflow = [];
+for (const [w, h] of [[390, 844], [768, 1024], [1024, 768], [1280, 800], [1440, 900]]) {
+  await page.setViewportSize({ width: w, height: h });
+  for (const r of ROUTES) {
+    await page.goto(`${BASE}${r}`);
+    await page.waitForTimeout(500);
+    const o = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    if (o > 1) overflow.push(`${w}px ${r} +${o}px`);
+  }
+}
+assert(overflow.length === 0, `반응형: 390·768·1024·1280·1440px × 8개 화면 가로 넘침 없음 ${overflow.join(", ")}`);
+
+// ── 휴대폰(390px) 조작
+await page.setViewportSize({ width: 390, height: 844 });
+await page.goto(BASE);
+await page.waitForTimeout(500);
+assert((await page.locator('aside[aria-label="업무 메뉴"]').evaluate((e) => e.getBoundingClientRect().right)) <= 0, "휴대폰: 메뉴는 기본으로 숨김");
+await page.getByRole("button", { name: "메뉴 열기" }).click();
+await page.waitForTimeout(400);
+assert((await page.locator('aside[aria-label="업무 메뉴"]').evaluate((e) => e.getBoundingClientRect().left)) >= 0, "휴대폰: ☰ 버튼으로 서랍 메뉴 열림");
+await page.locator('aside[aria-label="업무 메뉴"] nav a', { hasText: "규정 편집기" }).click();
+await page.waitForURL("**/editor**");
+await page.waitForTimeout(400);
+assert((await page.locator('aside[aria-label="업무 메뉴"]').evaluate((e) => e.getBoundingClientRect().right)) <= 0, "휴대폰: 메뉴 선택 시 서랍 닫힘");
+await page.getByRole("tab", { name: "목차" }).click();
+await page.getByRole("button", { name: /제6조\(지원 한도\)/ }).click();
+await page.getByRole("heading", { name: "제6조(지원 한도)" }).waitFor();
+assert(await page.locator("textarea").first().isVisible(), "휴대폰: 목차에서 조항 선택 → 조항 편집 탭으로 이동");
+await shot("m-editor");
+await page.getByRole("tab", { name: /근거·검토/ }).click();
+assert(await page.getByRole("heading", { name: "근거" }).isVisible(), "휴대폰: 근거·검토 탭 표시");
+await page.goto(`${BASE}/conditions`);
+await page.waitForTimeout(600);
+assert((await page.locator("table.rtable tbody td").first().getAttribute("data-label")) === "항목", "휴대폰: 표가 카드형으로 바뀌고 칸마다 열 이름 표시");
+await shot("m-conditions");
+
 assert(errors.length === 0, `브라우저 스크립트 오류 없음${errors.length ? `: ${errors.join(" | ")}` : ""}`);
 await browser.close();

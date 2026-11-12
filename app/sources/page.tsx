@@ -51,7 +51,7 @@ function SourcesBody() {
           </Empty>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-[13px]">
+            <table className="rtable w-full text-[13px]">
               <thead>
                 <tr className="border-b border-gray-200 text-left text-[12px] text-gray-500">
                   <th className="py-2 pr-2">문서명</th>

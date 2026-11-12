@@ -62,7 +62,7 @@ function Body() {
           허용하지 않은 자료의 원문은 AI 호출에서 제외됩니다. 배경자료는 근거로 쓰지 않으므로 보내지 않습니다. 다만 AI 제안을 요청한 조항의 현재 제목·본문은 전송됩니다.
           {kind === "sample" && " 샘플(데모) 작업공간에서는 AI를 호출하지 않습니다."}
         </p>
-        <table className="w-full text-[13px]">
+        <table className="rtable w-full text-[13px]">
           <thead><tr className="border-b border-gray-200 text-left text-[12px] text-gray-500"><th className="py-1.5">자료</th><th>유형</th><th>공개</th><th className="text-center">외부 전송 허용</th></tr></thead>
           <tbody>
             {w.docs.map((d) => (

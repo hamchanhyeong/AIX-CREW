@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { computeIssues } from "@/lib/checks";
 import { DEMO_NOTICE } from "@/lib/labels";
 import { currentVersionLabel } from "@/lib/ops";
@@ -57,9 +57,42 @@ export function AppShell({ children }: { children: ReactNode }) {
     return () => ro.disconnect();
   }, []);
 
+  // 태블릿·휴대폰(1279px 이하): 서랍 메뉴. 화면을 옮기면 닫는다.
+  const [navOpen, setNavOpen] = useState(false);
+  useEffect(() => setNavOpen(false), [path]);
+
+  // 휴대폰 카드형 표: table.rtable의 각 칸에 열 이름(data-label)을 붙인다
+  const mainRef = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const el = mainRef.current;
+    if (!el) return;
+    const label = () => {
+      el.querySelectorAll<HTMLTableElement>("table.rtable").forEach((t) => {
+        const heads = [...t.querySelectorAll("thead th")].map((th) => th.textContent?.trim() ?? "");
+        t.querySelectorAll("tbody tr").forEach((tr) =>
+          [...tr.children].forEach((td, i) => {
+            const v = heads[i] ?? "";
+            if (td.getAttribute("data-label") !== v) td.setAttribute("data-label", v);
+          }),
+        );
+      });
+    };
+    label();
+    const mo = new MutationObserver(label);
+    mo.observe(el, { childList: true, subtree: true });
+    return () => mo.disconnect();
+  }, []);
+
   return (
     <div className="flex min-h-screen">
-      <aside className="sticky top-0 hidden h-screen w-56 shrink-0 flex-col bg-navy text-white md:flex">
+      {navOpen && <div className="fixed inset-0 z-40 bg-black/40 xl:hidden" onClick={() => setNavOpen(false)} aria-hidden />}
+      <aside
+        className={cx(
+          "fixed inset-y-0 left-0 z-50 flex h-screen w-64 shrink-0 flex-col bg-navy text-white transition-transform duration-200 xl:sticky xl:top-0 xl:z-auto xl:w-56 xl:translate-x-0",
+          navOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full",
+        )}
+        aria-label="업무 메뉴"
+      >
         <div className="border-b border-white/10 px-4 py-4">
           <div className="text-[11px] font-semibold tracking-wide text-white/60">재기지원 사업</div>
           <div className="text-[15px] font-bold">규정 작성 지원</div>
@@ -72,7 +105,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 key={n.href}
                 href={n.href}
                 className={cx(
-                  "mb-0.5 flex items-center gap-2 rounded-md px-3 py-2 text-[13px]",
+                  "mb-0.5 flex items-center gap-2 rounded-md px-3 py-2.5 text-[14px] xl:py-2 xl:text-[13px]",
                   active ? "bg-white/15 font-semibold text-white" : "text-white/75 hover:bg-white/10 hover:text-white",
                 )}
               >
@@ -90,15 +123,24 @@ export function AppShell({ children }: { children: ReactNode }) {
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header ref={headerRef} className="sticky top-0 z-20 border-b border-gray-200 bg-white">
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-5 py-2.5">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-3 py-2 sm:px-5 sm:py-2.5">
+            <button
+              type="button"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-gray-300 text-lg text-navy xl:hidden"
+              onClick={() => setNavOpen((v) => !v)}
+              aria-label="메뉴 열기"
+              aria-expanded={navOpen}
+            >
+              ☰
+            </button>
             <div className="min-w-0 flex-1">
               <div className="truncate text-[15px] font-bold text-navy">{ws?.project.name ?? (loading ? "불러오는 중…" : "작업공간 없음")}</div>
-              {ws && <div className="text-[11px] text-gray-500">버전 {currentVersionLabel(ws)}</div>}
+              {ws && <div className="text-[11px] text-gray-500">{ws.snapshots.length ? `버전 ${currentVersionLabel(ws)}` : "저장된 버전 없음(작업본)"}</div>}
             </div>
             <label className="flex items-center gap-2 text-[12px] text-gray-600">
-              작업공간
+              <span className="hidden sm:inline">작업공간</span>
               <select
-                className="rounded-md border border-gray-300 bg-white px-2 py-1 text-[13px]"
+                className="max-w-[150px] rounded-md border border-gray-300 bg-white px-2 py-1.5 text-[13px] sm:max-w-none"
                 value={kind}
                 onChange={(e) => switchKind(e.target.value as "main" | "sample")}
               >
@@ -106,20 +148,15 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <option value="sample">샘플(시연용 가상 자료)</option>
               </select>
             </label>
-            <ModeBadge />
-            <SaveIndicator />
+            <div className="flex w-full flex-wrap items-center gap-x-3 gap-y-1 sm:w-auto">
+              <ModeBadge />
+              <SaveIndicator />
+            </div>
           </div>
-          {ws?.isDemo && <div className="bg-amber-100 px-5 py-1 text-[12px] font-semibold text-amber-900">{DEMO_NOTICE} 화면과 내보낸 파일에 같은 표시가 유지됩니다.</div>}
-          <nav className="flex gap-1 overflow-x-auto border-t border-gray-100 px-3 py-1.5 md:hidden" aria-label="업무 메뉴(모바일)">
-            {NAV.map((n) => (
-              <Link key={n.href} href={n.href} className={cx("whitespace-nowrap rounded px-2 py-1 text-[12px]", path === n.href ? "bg-navy text-white" : "text-gray-700")}>
-                {n.label}
-              </Link>
-            ))}
-          </nav>
+          {ws?.isDemo && <div className="bg-amber-100 px-3 py-1 text-[11px] font-semibold text-amber-900 sm:px-5 sm:text-[12px]">{DEMO_NOTICE} 화면과 내보낸 파일에 같은 표시가 유지됩니다.</div>}
         </header>
 
-        <main className="min-w-0 flex-1 px-5 py-5">
+        <main ref={mainRef} className="min-w-0 flex-1 px-3 py-4 sm:px-5 sm:py-5">
           {loadError ? (
             <Notice tone="red">작업공간을 불러오지 못했습니다: {loadError}</Notice>
           ) : loading && !ws ? (
@@ -130,7 +167,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </main>
       </div>
 
-      <div className="pointer-events-none fixed bottom-4 right-4 z-50 flex w-96 max-w-[calc(100vw-2rem)] flex-col gap-2" aria-live="polite">
+      <div className="pointer-events-none fixed bottom-3 left-3 right-3 z-[60] flex flex-col gap-2 sm:left-auto sm:right-4 sm:bottom-4 sm:w-96" aria-live="polite">
         {toasts.map((t) => (
           <div
             key={t.id}

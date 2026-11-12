@@ -41,3 +41,21 @@ body {
   outline: 2px solid var(--color-brand);
   outline-offset: 2px;
 }
+
+/* ════════ 반응형 — 휴대폰(≤767px)
+   표(.rtable)는 행마다 카드로, 칸마다 열 이름(data-label)을 붙여 보여 준다.
+   입력칸은 16px로(아이폰 자동 확대 방지), 버튼은 손가락으로 누르기 쉬운 높이로. */
+@media (max-width: 767px) {
+  body { font-size: 15px; }
+  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]), select, textarea { font-size: 16px !important; }
+  button { min-height: 38px; }
+  .rtable thead { display: none; }
+  .rtable, .rtable tbody, .rtable tr, .rtable td { display: block; width: 100% !important; }
+  .rtable tr { border: 1px solid #e5e7eb; border-radius: 8px; padding: 8px 10px; margin-bottom: 8px; background: #fff; }
+  .rtable td { border: none !important; padding: 4px 0 !important; text-align: left !important; }
+  .rtable td[data-label]:not([data-label=""])::before {
+    content: attr(data-label); display: block; font-size: 11px; font-weight: 700; color: #6b7280; margin-bottom: 2px;
+  }
+  .rtable.cmp tr { background: #fff; }
+  .rtable thead tr { display: none; }
+}

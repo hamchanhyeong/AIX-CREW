@@ -28,8 +28,9 @@ AIX-CREW 2026 부트캠프 기업 과제 수행 저장소.
 
 - Next.js(App Router) + TypeScript + Tailwind v4. 실행·환경변수·데이터 위치는 [README.md](README.md).
 - 도메인 로직은 `lib/`의 순수 함수이며 `tests/`에서 Vitest로 검증한다. 서버 전용 코드는 `lib/server/`, AI는 `lib/ai/`.
+- 반응형(R21): ≥1280px 메뉴 고정·편집기 3단, ≤1279px 서랍 메뉴(`components/app-shell.tsx`)·편집기 탭(`app/editor/page.tsx`), ≤767px 카드형 표(표에 `rtable` 클래스, `app/globals.css`). 가로 넘침이 생기면 안 된다.
 - 저장: 서버 로컬 JSON(`data/`, Git 제외). 이동·보관은 작업 백업.json 내보내기·복원.
-- 검증: `npm run typecheck`, `npm run lint`, `npm test`, `npm run build`, 브라우저 흐름 `node scripts/e2e-demo.mjs <URL>`.
+- 검증: `npm run typecheck`, `npm run lint`, `npm test`, `npm run build`, 브라우저 흐름 `node scripts/e2e-demo.mjs <URL>`(시연 1~11단계 + 5개 폭 반응형).
 - AI: 서버에서만 호출, 키는 `.env.local`(커밋 금지). 출처 ID·인용 검증 실패 시 결과를 버리고 데모 결과로 대체하지 않는다.
 - 원칙: 원문 없는 법령 조문 번호·인용을 만들지 않는다. 미확정 값은 채우지 않고 【확인 필요】로 남긴다.
   유사사업 규정은 참고(현행 규정 아님), 배경자료는 근거로 연결하지 않는다. 계획 변경은 조건 ID↔조항 ID 연결로만 처리한다.

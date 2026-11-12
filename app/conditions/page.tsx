@@ -82,7 +82,7 @@ function Body() {
 
       {groups.map((g) => (
         <Card key={g.id ?? "common"} title={`${g.title} 조건`}>
-          <table className="w-full text-[13px]">
+          <table className="rtable w-full text-[13px]">
             <thead>
               <tr className="border-b border-gray-200 text-left text-[12px] text-gray-500">
                 <th className="w-40 py-2">항목</th>
