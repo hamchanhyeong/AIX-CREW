@@ -1,0 +1,12 @@
+node_modules/
+.next/
+out/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+.env
+.env.local
+.env.*.local
+# 로컬 작업 데이터(기관 자료 포함 가능) — 커밋 금지
+data/
+test-output/
