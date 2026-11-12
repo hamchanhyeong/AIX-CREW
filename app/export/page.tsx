@@ -91,6 +91,8 @@ function Body() {
         </ul>
       </Card>
 
+      <Notice tone="blue">운영계획(안) <b>수정사항 대비표.docx</b>는 ‘계획 변경·신구대비표’ 화면에서 이전·새 계획(안)을 골라 내려받습니다.</Notice>
+
       <Card title="백업 복원">
         <p className="mb-2 text-[13px] text-gray-600">작업 백업.json을 선택하면 형식을 확인한 뒤 현재 작업공간({kind === "sample" ? "샘플" : "실제"})을 덮어씁니다.</p>
         <input type="file" accept=".json,application/json" onChange={(e) => e.target.files?.[0] && restore(e.target.files[0])} className="text-[13px] file:mr-3 file:rounded-md file:border file:border-gray-300 file:bg-white file:px-3 file:py-1.5" />

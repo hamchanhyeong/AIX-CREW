@@ -5,12 +5,14 @@ import { useMemo, useState } from "react";
 import { NeedWorkspace } from "@/components/app-shell";
 import { downloadFile } from "@/components/download";
 import { CompareTable } from "@/components/compare-table";
+import { DraftCheckCard, PlanDiffView } from "@/components/plan-diff";
 import { Badge, Button, Card, cx, DiffView, Empty, inputCls, Notice, PageHeader } from "@/components/ui";
 import { useWorkspace } from "@/components/workspace-context";
 import { applySuggestion, decideSuggestion, diffConditions, proposeFromPlanDoc, saveChangeSetVersion, startChangeSet, type ProposedCondition } from "@/lib/change";
 import { BASIS_LABEL, buildCompareRows, type CompareBasis } from "@/lib/compare";
 import { addDoc, DEMO_PLAN_V2 } from "@/lib/demo";
 import { DOC_KIND_LABEL, SUGGESTION_STATUS_LABEL } from "@/lib/labels";
+import { defaultBeforePlan, diffPlanDocs } from "@/lib/plandiff";
 import { articleNumbers } from "@/lib/render";
 import { conditionTitle } from "@/lib/structure";
 import type { ChangeSet, CondStatus, ConditionDiff } from "@/lib/types";
@@ -21,7 +23,7 @@ export default function ChangesPage() {
     <div className="mx-auto max-w-7xl">
       <PageHeader
         title="계획 변경·신구대비표"
-        desc="① 이전·신규 계획 조건 비교 → ② 연결된 조항 찾기 → ③ 수정안 생성 → ④ 변경 전·후 비교 → ⑤ 개별 반영·보류 → ⑥ 새 버전 저장"
+        desc="운영계획(안) 원문 수정사항 확인 → ① 사업 조건 비교 → ② 연결된 조항 찾기 → ③ 수정안 생성 → ④ 변경 전·후 비교 → ⑤ 개별 반영·보류 → ⑥ 새 버전 저장"
       />
       <NeedWorkspace>
         <Body />
@@ -58,6 +60,7 @@ function Body() {
       {cs && <ChangeSetView key={cs.id} cs={cs} />}
       {/* 새 계획 변경이 생기면 기본 비교 기준(이전 초안 ↔ 계획 반영 초안)으로 다시 시작 */}
       <CompareSection key={w.changeSets[w.changeSets.length - 1]?.id ?? "none"} />
+      <DraftCheckCard ws={w} />
     </div>
   );
 }
@@ -68,6 +71,10 @@ function NewChange({ onStarted }: { onStarted: (id: string) => void }) {
   const [mode, setMode] = useState<"plan" | "direct">("plan");
   const plans = w.docs.filter((d) => d.type === "plan" && d.textStatus === "registered");
   const [planId, setPlanId] = useState<string>(plans[plans.length - 1]?.id ?? "");
+  const [beforeSel, setBeforeSel] = useState<string>("");
+  const { flush, notify, kind } = useWorkspace();
+  const beforeId = beforeSel && beforeSel !== planId && plans.some((d) => d.id === beforeSel) ? beforeSel : planId ? defaultBeforePlan(w, planId) ?? "" : "";
+  const planDiff = useMemo(() => (mode === "plan" && planId && beforeId ? diffPlanDocs(w, beforeId, planId) : null), [mode, planId, beforeId, w]);
   const [direct, setDirect] = useState<Record<string, ProposedCondition>>({});
   const [label, setLabel] = useState("");
 
@@ -90,7 +97,7 @@ function NewChange({ onStarted }: { onStarted: (id: string) => void }) {
   }
 
   return (
-    <Card title="새 계획 반영 · 조건 비교">
+    <Card title="운영계획(안) 변경 비교">
       <div className="mb-3 flex gap-1 rounded-md bg-gray-100 p-1 text-[13px]">
         <button className={cx("flex-1 rounded px-3 py-1.5", mode === "plan" ? "bg-white font-semibold text-navy shadow-sm" : "text-gray-600")} onClick={() => setMode("plan")}>새 운영계획(안)과 비교</button>
         <button className={cx("flex-1 rounded px-3 py-1.5", mode === "direct" ? "bg-white font-semibold text-navy shadow-sm" : "text-gray-600")} onClick={() => setMode("direct")}>주요 조건 직접 변경</button>
@@ -99,9 +106,16 @@ function NewChange({ onStarted }: { onStarted: (id: string) => void }) {
       {mode === "plan" ? (
         <div className="space-y-3">
           <div className="flex flex-wrap items-end gap-2">
-            <label className="min-w-72 flex-1">
-              <span className="mb-1 block text-[12px] font-semibold text-gray-700">비교할 운영계획(안)</span>
-              <select className={inputCls} value={planId} onChange={(e) => setPlanId(e.target.value)}>
+            <label className="min-w-64 flex-1">
+              <span className="mb-1 block text-[12px] font-semibold text-gray-700">이전 운영계획(안)</span>
+              <select className={inputCls} value={beforeId} onChange={(e) => setBeforeSel(e.target.value)} aria-label="이전 운영계획(안)">
+                {plans.filter((d) => d.id !== planId).map((d) => <option key={d.id} value={d.id}>{d.title} ({d.version || "버전 미기재"})</option>)}
+                {plans.length < 2 && <option value="">비교할 이전 계획(안) 없음</option>}
+              </select>
+            </label>
+            <label className="min-w-64 flex-1">
+              <span className="mb-1 block text-[12px] font-semibold text-gray-700">새 운영계획(안)</span>
+              <select className={inputCls} value={planId} onChange={(e) => setPlanId(e.target.value)} aria-label="새 운영계획(안)">
                 {plans.map((d) => <option key={d.id} value={d.id}>{d.title} ({d.version || "버전 미기재"}) · 등록 {formatDate(d.createdAt)}</option>)}
               </select>
             </label>
@@ -113,9 +127,26 @@ function NewChange({ onStarted }: { onStarted: (id: string) => void }) {
             )}
             <Link href="/sources"><Button variant="ghost">새 계획(안) 파일 등록</Button></Link>
           </div>
+          <div className="rounded-md border border-gray-200 p-3">
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <h3 className="text-[14px] font-semibold text-navy">운영계획(안) 원문 수정사항</h3>
+              {planDiff && (
+                <Button size="sm" variant="secondary" onClick={async () => {
+                  if (!(await flush())) return notify("저장에 실패해 내려받지 않았습니다.", "error");
+                  const r = await downloadFile(`/api/export?kind=${kind}&type=plandiff&before=${beforeId}&after=${planId}`);
+                  notify(r.ok ? `내려받았습니다: ${r.name}` : r.error, r.ok ? "ok" : "error");
+                }}>수정사항 대비표.docx 다운로드</Button>
+              )}
+            </div>
+            {planDiff ? (
+              <PlanDiffView ws={w} result={planDiff} />
+            ) : (
+              <p className="text-[13px] text-gray-500">비교하려면 운영계획(안)이 2개 이상 등록되어 있어야 합니다. 새 계획(안)을 자료 관리에서 등록하세요{w.isDemo ? " (시연: ‘가상 계획 v2 등록’)" : ""}.</p>
+            )}
+          </div>
           {planProposal && (
             <p className="text-[12px] text-gray-500">
-              {planProposal.method}. 새 계획에서 찾지 못한 기존 조건 {planProposal.notFound.length}개는 바꾸지 않습니다{planProposal.notFound.length ? `: ${planProposal.notFound.join(", ")}` : ""}.
+              사업 조건 비교: {planProposal.method}. 새 계획에서 찾지 못한 기존 조건 {planProposal.notFound.length}개는 바꾸지 않습니다{planProposal.notFound.length ? `: ${planProposal.notFound.join(", ")}` : ""}.
             </p>
           )}
         </div>
@@ -125,6 +156,7 @@ function NewChange({ onStarted }: { onStarted: (id: string) => void }) {
 
       <div className="mt-4">
         <h3 className="mb-2 text-[13px] font-semibold text-navy">① 조건 비교 결과 — 바뀐 조건 {diffs.length}개</h3>
+        {mode === "plan" && <p className="mb-2 text-[12px] text-gray-500">새 계획(안)의 사업 조건 값을 <b>현재 작업 중인 조건</b>과 비교합니다. 바뀐 조건과 연결된 조항에만 수정안을 만듭니다.</p>}
         {diffs.length === 0 ? (
           <p className="text-[13px] text-gray-500">현재 조건과 달라진 값이 없습니다.</p>
         ) : (

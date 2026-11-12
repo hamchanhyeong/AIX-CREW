@@ -113,7 +113,7 @@ function SourceItem({ s, onRemove }: { s: ClauseSource; onRemove: () => void }) 
         <p className="mt-1 text-[12px] text-amber-800">{s.note ?? "원문이 등록되지 않았습니다."}{doc && doc.textStatus !== "registered" && <> <Link href="/sources" className="underline">원문 등록</Link></>}</p>
       )}
       {s.note && chunk && <p className="mt-1 text-[11px] text-gray-500">{s.note}</p>}
-      <div className="mt-1 text-[10.5px] text-gray-400">{s.addedBy === "template" ? "템플릿 연결" : s.addedBy === "ai" ? "AI 인용(검증됨)" : "담당자 연결"}</div>
+      <div className="mt-1 text-[10.5px] text-gray-400">{s.addedBy === "template" ? "템플릿 연결" : s.addedBy === "ai" ? "AI 인용(원문과 일치 확인)" : "담당자 연결"}</div>
     </li>
   );
 }

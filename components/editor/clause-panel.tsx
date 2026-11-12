@@ -94,7 +94,7 @@ export function ClausePanel({ clause, number, onDirty, onSelect }: { clause: Cla
           warnings: res.excludedDocs?.length ? [`외부 전송 금지로 제외된 자료: ${res.excludedDocs.join(", ")}`] : [],
         });
         for (const t of res.checkItems as string[]) x.aiIssues.push({ id: uid("ai"), clauseId: clause.id, text: t, createdAt: new Date().toISOString(), resolved: false });
-      }, "AI 작성 제안을 받았습니다(출처·인용 검증 통과). 적용 여부를 선택하세요.");
+      }, "AI 작성 제안을 받았습니다. 인용 문구가 원문과 일치하는지만 확인했으니, 내용은 직접 검토한 뒤 적용 여부를 선택하세요.");
     } catch {
       setAiError({ message: "AI 요청 중 네트워크 오류가 발생했습니다." });
     } finally {

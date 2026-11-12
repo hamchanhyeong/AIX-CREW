@@ -1,6 +1,7 @@
 import { buildCompareRows, type CompareBasis } from "@/lib/compare";
 import { buildEvidenceCsv } from "@/lib/export/csv";
-import { buildCompareDocx, buildRegulationDocx } from "@/lib/export/docx";
+import { buildCompareDocx, buildPlanDiffDocx, buildRegulationDocx } from "@/lib/export/docx";
+import { diffPlanDocs } from "@/lib/plandiff";
 import { parseKind, readWorkspace } from "@/lib/server/store";
 
 export const dynamic = "force-dynamic";
@@ -54,6 +55,14 @@ export async function GET(req: Request) {
     const rows = buildCompareRows(ws, basis);
     const buf = await buildCompareDocx(ws, rows, basis, detail);
     return file(buf, `${prefix}신구대비표_${date}.docx`, DOCX, "comparison.docx");
+  }
+  if (type === "plandiff") {
+    const before = ws.docs.find((d) => d.id === sp.get("before") && d.type === "plan");
+    const after = ws.docs.find((d) => d.id === sp.get("after") && d.type === "plan");
+    if (!before || !after) return Response.json({ error: "비교할 운영계획(안) 2개를 선택하세요." }, { status: 400 });
+    const result = diffPlanDocs(ws, before.id, after.id);
+    const buf = await buildPlanDiffDocx(ws, result, `${before.title} (${before.version || "버전 미기재"})`, `${after.title} (${after.version || "버전 미기재"})`);
+    return file(buf, `${prefix}운영계획 수정사항 대비표_${date}.docx`, DOCX, "plan-diff.docx");
   }
   if (type === "csv") {
     return file(buildEvidenceCsv(ws), `${prefix}근거 매핑표_${date}.csv`, "text/csv; charset=utf-8", "evidence-map.csv");

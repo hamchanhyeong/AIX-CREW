@@ -87,12 +87,30 @@ await page.getByRole("radio", { name: "검토 완료" }).click();
 await waitSaved();
 assert((await page.getByRole("radio", { name: "검토 완료" }).getAttribute("aria-checked")) === "true", "6. 조항 수정·저장 후 검토 완료 처리");
 
+const dl = async (clickFn, label) => {
+  const [d] = await Promise.all([page.waitForEvent("download"), clickFn()]);
+  // 헤드리스 브라우저는 blob 다운로드 이름을 'download'로 보고하므로 앱 알림의 파일명을 확인하고 라벨로 저장
+  const toast = page.getByText(/^내려받았습니다: /).last();
+  await toast.waitFor();
+  const appName = (await toast.innerText()).replace("내려받았습니다: ", "");
+  await d.saveAs(path.join(OUT, label.endsWith(".docx") || label.includes(".") ? label : `${label}.docx`));
+  assert(/[가-힣]/.test(appName), `다운로드: ${appName}`);
+  return appName;
+};
+
 // 7. 가상 지원 한도 1억원 → 1.5억원 (가상 계획 v2)
 await page.goto(`${BASE}/changes`);
 await page.getByRole("button", { name: /가상 계획 v2 등록/ }).click();
 await page.getByText("① 조건 비교 결과 — 바뀐 조건 1개").waitFor();
 await shot("07-changes-diff");
 assert(await page.getByRole("cell", { name: "1.5억원 미확정" }).isVisible(), "7. 새 계획 비교: 재도전성공패키지 지원 한도 1억원 → 1.5억원");
+// 7-1. 운영계획(안) 원문 수정사항: 줄 단위 [수정]·[추가]와 조건 인식 여부
+await page.getByText(/바뀐 줄 \d+개/).waitFor();
+const planDiffText = await page.getByText(/바뀐 줄 \d+개/).innerText();
+assert(/바뀐 줄 4개 — 수정 2 · 추가 2 · 삭제 0/.test(planDiffText), `7-1. 운영계획 원문 수정사항 표시 (${planDiffText})`);
+assert(await page.getByRole("cell", { name: /재도전성공패키지 · 지원 한도\(기업당\)/ }).first().isVisible(), "7-1. 지원 한도 줄은 사업 조건으로 인식");
+assert((await page.getByText("조건 미인식 — 관련 조항 직접 확인").count()) === 3, "7-1. 조건으로 인식되지 않은 변경 3줄은 ‘직접 확인’으로 표시");
+await dl(() => page.getByRole("button", { name: "수정사항 대비표.docx 다운로드" }).click(), "운영계획 수정사항 대비표.docx");
 await page.getByRole("button", { name: /② 연결 조항 찾기/ }).click();
 await page.getByText(/연결된 조항 3개에 수정안 생성/).waitFor();
 
@@ -113,24 +131,19 @@ await waitSaved();
 await shot("09-changes-decided");
 let statusBadges = [];
 for (let i = 0; i < 25; i++) {
-  statusBadges = await page.locator("table").last().locator("td:last-child").allInnerTexts();
+  statusBadges = await page.locator("table.cmp").last().locator("td:last-child").allInnerTexts();
   if (statusBadges.filter((t) => t.includes("보류")).length === 1) break;
   await page.waitForTimeout(200);
 }
 assert(statusBadges.filter((t) => t.includes("반영")).length === 2 && statusBadges.filter((t) => t.includes("보류")).length === 1, `9. 2건 반영·1건 보류, 새 버전 저장 (${JSON.stringify(statusBadges)})`);
 
 // 10. 다운로드
-const dl = async (clickFn, label) => {
-  const [d] = await Promise.all([page.waitForEvent("download"), clickFn()]);
-  // 헤드리스 브라우저는 blob 다운로드 이름을 'download'로 보고하므로 앱 알림의 파일명을 확인하고 라벨로 저장
-  const toast = page.getByText(/^내려받았습니다: /).last();
-  await toast.waitFor();
-  const appName = (await toast.innerText()).replace("내려받았습니다: ", "");
-  await d.saveAs(path.join(OUT, label.endsWith(".docx") || label.includes(".") ? label : `${label}.docx`));
-  assert(/[가-힣]/.test(appName), `10. 다운로드: ${appName}`);
-  return appName;
-};
 await dl(() => page.getByRole("button", { name: "신구대비표.docx 다운로드" }).click(), "신구대비표.docx");
+// 9-1. 운영계획 ↔ 규정 초안 대조: 보류한 조항이 ‘값 불일치’로 드러남
+await page.getByText("운영계획 ↔ 규정 초안 대조 (사업 조건 기준)").scrollIntoViewIfNeeded();
+const mismatchRow = page.locator("tr", { hasText: "재도전성공패키지 · 지원 한도(기업당)" }).filter({ hasText: "값 불일치" });
+assert((await mismatchRow.count()) >= 1 && (await mismatchRow.first().getByText("미반영").count()) === 1, "9-1. 계획↔초안 대조: 보류한 1개 조항이 ‘값 불일치·미반영’으로 표시");
+await shot("09-draft-check");
 await page.goto(`${BASE}/export`);
 for (const nm of ["운영규칙 초안.docx", "운영요령 초안.docx", "근거 매핑표.csv", "작업 백업.json"]) {
   await dl(() => page.locator("li", { hasText: nm }).getByRole("button", { name: "다운로드" }).click(), nm);

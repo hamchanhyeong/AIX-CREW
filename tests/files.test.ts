@@ -7,7 +7,8 @@ import { describe, expect, it } from "vitest";
 import { applySuggestion, decideSuggestion, diffConditions, proposeFromPlanDoc, startChangeSet } from "@/lib/change";
 import { buildCompareRows } from "@/lib/compare";
 import { buildEvidenceCsv } from "@/lib/export/csv";
-import { buildCompareDocx, buildRegulationDocx } from "@/lib/export/docx";
+import { buildCompareDocx, buildPlanDiffDocx, buildRegulationDocx } from "@/lib/export/docx";
+import { diffPlanDocs } from "@/lib/plandiff";
 import { parseUpload } from "@/lib/server/parse";
 import { addPlanV2, clauseByKey, draftedSample } from "./helpers";
 
@@ -93,6 +94,21 @@ describe("내보내기", () => {
       expect(html).toContain(h);
     }
     expect(clauseByKey(ws, "rule.budget").body).toContain("1억원");
+  });
+
+  it("운영계획 수정사항 대비표 DOCX에 수정·추가 줄과 조건 인식 결과가 들어간다", async () => {
+    const ws = draftedSample();
+    const v1 = ws.docs.find((d) => d.type === "plan")!;
+    const v2 = addPlanV2(ws);
+    const buf = await buildPlanDiffDocx(ws, diffPlanDocs(ws, v1.id, v2.id), "가상 v1", "가상 v2");
+    writeFileSync(path.join(OUT, "운영계획 수정사항 대비표.docx"), buf);
+    const html = (await mammoth.convertToHtml({ buffer: buf })).value;
+    // 바뀐 글자만 강조하므로 서식을 뺀 글자로 확인
+    const text = html.replace(/<[^>]+>/g, "");
+    for (const h of ["운영계획(안) 수정사항 대비표", "이전 계획(안)", "새 계획(안)", "사업 조건", "[수정]", "[추가]", "1.5억원", "조건 미인식", "지원 한도(기업당)", "검토용 초안"]) {
+      expect(text).toContain(h);
+    }
+    expect(html).toContain("<table>");
   });
 
   it("근거 매핑표 CSV는 BOM과 한글 헤더를 가진다", () => {

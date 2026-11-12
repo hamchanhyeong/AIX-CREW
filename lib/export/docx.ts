@@ -15,6 +15,7 @@ import {
   WidthType,
 } from "docx";
 import type { CompareRow } from "../change";
+import type { PlanDiffResult } from "../plandiff";
 import { BASIS_LABEL, type CompareBasis } from "../compare";
 import { textDiff } from "../diff";
 import {
@@ -271,4 +272,64 @@ export async function buildRegulationDocx(ws: Workspace, docKind: DocKind): Prom
 
 export async function buildCompareDocx(ws: Workspace, rows: CompareRow[], basis: CompareBasis, basisDetail: string): Promise<Buffer> {
   return Packer.toBuffer(compareDocument(ws, rows, basis, basisDetail));
+}
+
+// ───────────── 운영계획(안) 원문 수정사항 대비표
+const PLAN_BADGE = {
+  modified: { text: "[수정]", fill: "DBEAFE" },
+  added: { text: "[추가]", fill: "DCFCE7" },
+  removed: { text: "[삭제]", fill: "FEE2E2" },
+} as const;
+
+export function planDiffDocument(ws: Workspace, result: PlanDiffResult, beforeLabel: string, afterLabel: string): Document {
+  const title = "재기지원 사업 운영계획(안) 수정사항 대비표";
+  const children: (Paragraph | Table)[] = [...coverBlock(ws, title)];
+  children.push(p(`이전 계획(안): ${beforeLabel}`, { bold: true, after: 40 }));
+  children.push(p(`새 계획(안): ${afterLabel}`, { bold: true }));
+  children.push(
+    p(`바뀐 줄 ${result.added + result.removed + result.modified}개 — 수정 ${result.modified} · 추가 ${result.added} · 삭제 ${result.removed} / 사업 조건으로 인식 ${result.recognized} · 조건 미인식 ${result.unrecognized}`, { color: GRAY }),
+  );
+  children.push(p("‘조건 미인식’ 줄은 규정 조항 수정안이 자동으로 만들어지지 않으므로 관련 조항을 담당자가 직접 확인해야 합니다. 이 표는 원문 문자 비교 결과이며, 내용의 타당성이나 법령 적합성을 판단하지 않습니다.", { size: 16, color: GRAY, after: 160 }));
+  const header = new TableRow({
+    tableHeader: true,
+    children: [headerCell("구분", 10), headerCell("이전 계획(안)", 34), headerCell("새 계획(안)", 34), headerCell("사업 조건", 22)],
+  });
+  const changed = result.rows.filter((r) => r.type !== "same");
+  const body = changed.map((r) => {
+    const badge = PLAN_BADGE[r.type as keyof typeof PLAN_BADGE];
+    const b = r.before?.text ?? "";
+    const a = r.after?.text ?? "";
+    const side = (which: "before" | "after", loc?: string) => [
+      p(loc ?? "-", { size: 14, color: GRAY, after: 20 }),
+      ...(r.type === "modified" ? diffParagraphs(b, a, which) : [p((which === "before" ? b : a) || "-", { size: 18, after: 0 })]),
+    ];
+    const conds = r.conditionIds.length
+      ? r.conditionIds.map((id) => {
+          const c = ws.conditions.find((x) => x.id === id);
+          const n = ws.clauses.filter((x) => x.conditionIds.includes(id)).length;
+          return p(`${c ? `${c.programId ? `${ws.programs.find((x) => x.id === c.programId)?.name ?? ""} · ` : "공통 · "}${c.label}` : id} (연결 조항 ${n}개)`, { size: 16, after: 0 });
+        })
+      : [p("조건 미인식 — 관련 조항 직접 확인", { size: 16, color: "B45309", after: 0 })];
+    return new TableRow({
+      children: [
+        cell([p(badge.text, { bold: true, size: 18, after: 0 })], { fill: badge.fill }),
+        cell(r.before ? side("before", r.before.locator) : [p("(없음)", { size: 18, color: GRAY, after: 0 })]),
+        cell(r.after ? side("after", r.after.locator) : [p("(삭제됨)", { size: 18, color: GRAY, after: 0 })]),
+        cell(conds),
+      ],
+    });
+  });
+  if (!changed.length) children.push(p("두 계획(안)의 원문이 같습니다.", { color: GRAY }));
+  else children.push(new Table({ rows: [header, ...body], width: { size: 100, type: WidthType.PERCENTAGE }, borders: tableBorders }));
+  return new Document({
+    creator: "규정 작성 지원 도구",
+    title,
+    description: DRAFT_NOTICE,
+    styles: styles(),
+    sections: [{ properties: { page: { size: { orientation: PageOrientation.LANDSCAPE } } }, footers: { default: footer() }, children }],
+  });
+}
+
+export async function buildPlanDiffDocx(ws: Workspace, result: PlanDiffResult, beforeLabel: string, afterLabel: string): Promise<Buffer> {
+  return Packer.toBuffer(planDiffDocument(ws, result, beforeLabel, afterLabel));
 }

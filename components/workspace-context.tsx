@@ -42,13 +42,17 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const [ws, setWs] = useState<Workspace | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [saveState, setSaveState] = useState<SaveState>("idle");
+  const [saveState, setSaveStateRaw] = useState<SaveState>("idle");
   const [savedAt, setSavedAt] = useState<string | null>(null);
   const [ai, setAi] = useState<AiStatus | null>(null);
   const [toasts, setToasts] = useState<Toast[]>([]);
   const wsRef = useRef<Workspace | null>(null);
   const kindRef = useRef<WorkspaceKind>("main");
-  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const saveStateRef = useRef<SaveState>("idle");
+  const setSaveState = useCallback((v: SaveState) => {
+    saveStateRef.current = v;
+    setSaveStateRaw(v);
+  }, []);
   const pending = useRef(false);
   const inflight = useRef<Promise<boolean> | null>(null);
 
@@ -74,7 +78,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [setSaveState]);
 
   useEffect(() => {
     let k: WorkspaceKind = "main";
@@ -91,7 +95,9 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       .catch(() => setAi({ configured: false, provider: "-", model: "-", reason: "상태 확인 실패" }));
   }, [load]);
 
-  const save = useCallback(async (): Promise<boolean> => {
+  // 변경 즉시 저장한다(대기 없음). 저장 중에 또 바뀌면 끝나는 대로 마지막 상태를 이어서 저장한다.
+  // 페이지를 새로 불러오거나 닫을 때 저장 전 내용이 사라지는 것을 막기 위함.
+  const saveOnce = useCallback(async (): Promise<boolean> => {
     const cur = wsRef.current;
     if (!cur) return true;
     pending.current = false;
@@ -101,35 +107,41 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(cur),
+        keepalive: false,
       });
       const j = await r.json();
       if (!r.ok) throw new Error(j.error);
-      if (!pending.current) setSaveState("saved");
       setSavedAt(j.savedAt);
       return true;
     } catch {
       setSaveState("error");
       return false;
     }
-  }, []);
+  }, [setSaveState]);
+
+  const save = useCallback(async (): Promise<boolean> => {
+    let ok = true;
+    do {
+      ok = await saveOnce();
+      if (!ok) break;
+    } while (pending.current);
+    if (ok) setSaveState("saved");
+    return ok;
+  }, [saveOnce, setSaveState]);
 
   const scheduleSave = useCallback(() => {
     pending.current = true;
     setSaveState("saving");
-    if (timer.current) clearTimeout(timer.current);
-    timer.current = setTimeout(() => {
-      inflight.current = save();
-    }, 300);
-  }, [save]);
+    if (inflight.current) return; // 진행 중인 저장이 끝나면 save()가 이어서 저장
+    inflight.current = save().finally(() => {
+      inflight.current = null;
+    });
+  }, [save, setSaveState]);
 
   const flush = useCallback(async () => {
-    if (timer.current) {
-      clearTimeout(timer.current);
-      timer.current = null;
-    }
     if (inflight.current) await inflight.current;
     if (pending.current) return save();
-    return true;
+    return saveStateRef.current !== "error";
   }, [save]);
 
   const update = useCallback(
@@ -185,7 +197,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       setSaveState("saved");
       setSavedAt(j.ws.project.updatedAt);
     },
-    [flush, notify],
+    [flush, notify, setSaveState],
   );
 
   const replaceWorkspace = useCallback(
@@ -211,7 +223,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
     // 자동 저장 대기 중에 페이지를 떠나면: 작은 작업공간은 keepalive로 즉시 전송,
     // 큰 작업공간은 브라우저의 ‘저장되지 않은 변경’ 확인창으로 이탈을 막는다.
     const h = (e: BeforeUnloadEvent) => {
-      if (!pending.current || !wsRef.current) return;
+      if ((!pending.current && !inflight.current) || !wsRef.current) return;
       const body = JSON.stringify(wsRef.current);
       if (body.length < 60_000) {
         fetch(`/api/workspace?kind=${kindRef.current}`, { method: "PUT", headers: { "Content-Type": "application/json" }, body, keepalive: true }).catch(() => {});
