@@ -9,6 +9,19 @@
 > 모든 결과는 **검토용 초안**입니다. 기관 승인이나 법적 적합성을 보장하지 않습니다.
 > 샘플의 계획안·참고 규정·수치(예: 지원 한도 1억원→1.5억원)는 **시연용 가상 자료**이며 실제 사업 조건이 아닙니다.
 
+## 문서
+
+| 파일 | 내용 |
+| --- | --- |
+| [intent.md](intent.md) | 왜·누구를 위해·무엇을 만드는가 |
+| [docs/spec.md](docs/spec.md) | 입력·출력·규칙(R1~R20)·수용 기준 |
+| [docs/plan.md](docs/plan.md) | 작업 조각(T-번호)·파일 구조·일정·VS Code + Claude Code 작업 순서 |
+| [정답.md](정답.md) | 손으로 먼저 쓰는 기대 결과(직접 작성) |
+| [validation/](validation/) | 날짜별 검증 기록 |
+| [ai-log/](ai-log/) | AI 작업 기록 |
+| [questions.md](questions.md) | 기관 확인 사항 |
+| [docs/task-brief.md](docs/task-brief.md) | 과제 브리프 |
+
 ## 실행
 
 `index.html`을 더블클릭해 Chrome이나 Edge로 엽니다. Node.js·npm·서버·인터넷 연결이 필요 없습니다.
@@ -79,5 +92,7 @@ single/         화면 코드(app.ts, style.css)
 lib/            도메인 로직: 템플릿·초안·점검·계획 변경·신구대비표·내보내기
 tests/          Vitest 테스트
 scripts/        index.html 빌드, 시연 흐름 자동 검증
-docs/           과제 브리프
+docs/           과제 브리프, spec, plan
+validation/     검증 기록
+ai-log/         AI 작업 기록
 ```

@@ -8,6 +8,14 @@ AIX-CREW 2026 부트캠프 기업 과제 수행 저장소.
   재도전성공패키지 지침 등) 기반. 2026-11-16 시작, 4주, 12월 초 초안 마감.
 - 개인정보(담당자 연락처 등)는 저장소에 기록하지 않는다.
 
+## 캠프 문서 (작업 전 확인)
+
+- [intent.md](intent.md) 목적 · [docs/spec.md](docs/spec.md) 규칙 R1~R20 · [docs/plan.md](docs/plan.md) 작업 조각 T-n
+- 커밋 메시지 앞에 `[T-n]`, 관련 규칙은 `R-n`으로 부른다. 작업 전 Plan Mode로 바뀌는 파일을 먼저 제시한다.
+- 검증 결과는 `validation/YYYY-MM-DD.md`, AI 작업 요약은 `ai-log/YYYY-MM-DD.md`에 남긴다.
+- `정답.md`는 사람이 직접 쓰는 파일이다. AI가 기대 결과를 채우지 않는다.
+- 기관 확인이 필요한 사항은 `questions.md`에 추가한다.
+
 ## 제출물: index.html 한 장
 
 - 루트 `index.html`은 생성 파일이다. 직접 고치지 말고 `single/`(화면)·`lib/`(로직)을 고친 뒤 `npm run build:html`로 다시 만든다.
