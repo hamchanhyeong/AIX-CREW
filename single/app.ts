@@ -249,7 +249,7 @@ function pageDashboard() {
   <div class="stats">${stat("등록 자료", m.docCount, `원문 등록 ${m.registeredDocCount}건 · 미등록 ${m.docCount - m.registeredDocCount}건`, "sources")}${stat("근거 미확인 조항", m.unverifiedClauses, "원문 미등록·근거 미연결", "review", true)}${stat("미확정 사업 조건", m.unconfirmedConditions, `전체 ${m.totalConditions}개 조건 중`, "conditions", true)}${stat("검토 목록", m.issueCount, `결정 대기 제안 ${m.pendingSuggestions}건`, "review", true)}</div>
   <div class="g2">${prog("rule")}${prog("manual")}</div>
   ${card("세부사업 구성과 작성 전략", `<div class="g3">${w.programs.map((p) => `<div class="box"><div class="split"><b>${esc(p.name)}</b>${p.confirmedByAgency ? badge("기관 확인", "green") : badge("기관 확인 전", "amber")}</div><div class="strat">${STRATEGY_LABEL[p.strategy]}</div><small class="muted">${esc(p.strategyNote)}</small></div>`).join("")}</div><p class="muted sm">운영규칙은 3개 세부사업 공통 1부, 운영요령은 공통편과 사업별 3개 편으로 구성된 1부입니다(기획안 기준 초기 목차, 편집 가능).</p>`, badge(PLAN_BASIS_NOTICE, "amber"))}
-  <div class="notice gray">HTML 한 장 버전: 데이터는 이 브라우저(localStorage)에만 저장됩니다. 실제 AI 작성 제안과 PDF·DOCX 원문 추출은 전체 앱(Next.js 버전)에서 사용할 수 있습니다.</div>`;
+  <div class="notice gray">HTML 한 장 버전: 데이터는 이 브라우저(localStorage)에만 저장됩니다. 다른 PC로 옮기거나 브라우저 데이터를 지우기 전에 ‘작업 백업.json’을 받아 두세요. AI 작성 제안과 PDF·DOCX 원문 추출은 이 버전의 범위 밖입니다.</div>`;
 }
 
 // ───────────────────────── 자료
@@ -286,7 +286,7 @@ const readMeta = (p: string) => ({
 });
 function addDocForm() {
   return card("자료 등록", `${metaFields("n-", { title: "", type: "plan", version: "", effectiveDate: "", url: "", isPublic: false, applicability: "unchecked" })}
-  <div class="supp">${badge("지원: TXT 파일 · 원문 붙여넣기", "green")} ${badge("PDF·DOCX 추출은 전체 앱에서", "gray")} ${badge("HWP·OCR 미지원", "gray")}</div>
+  <div class="supp">${badge("지원: TXT 파일 · 원문 붙여넣기", "green")} ${badge("PDF·DOCX는 텍스트를 복사해 붙여넣기", "gray")} ${badge("HWP·OCR 미지원", "gray")}</div>
   <label class="blk">TXT 파일 불러오기 <input type="file" accept=".txt,.md" data-change="txt-file"></label>
   <label class="blk">원문(줄 단위로 원문 조각이 만들어집니다. 운영계획은 ‘- 지원 한도: 1억원’ 형식이면 조건을 추출합니다)<textarea id="n-text" rows="10">${esc(ui.addText)}</textarea></label>
   <div class="row">${btn("원문과 함께 등록", "save-doc", { v: "pri" })}${btn("목록만 등록(원문 미등록)", "save-doc-empty")}</div>`, btn("닫기", "close-add", { v: "ghost", sm: true }));
@@ -538,7 +538,7 @@ function pageExport(issues: Issue[]) {
   return `${header("내보내기·백업", "모든 파일에 프로젝트명·버전·작성일·검토용 초안 표시가 들어가며, 【확인 필요】·【미확정】 표시도 유지됩니다.")}
   ${card("", `<div class="row">현재 버전 <b>${esc(currentVersionLabel(w))}</b> · 검토 목록 <b>${issues.length}</b>건 ${w.isDemo ? badge("파일에 ‘시연용 가상 자료’ 표시", "amber") : ""}</div>`)}
   ${card("파일 내려받기", `<ul class="dl">${items.map(([t, n, d, ok]) => `<li><div><b class="navy">${n}</b><small class="muted">${d}</small></div>${btn(ok ? "다운로드" : t === "compare" ? "계획 변경 이력 없음" : "초안 없음", "export", { v: ok ? "pri" : "sec", data: `data-t="${t}"`, disabled: !ok })}</li>`).join("")}</ul>`)}
-  ${card("백업 복원", `<p class="muted sm">작업 백업.json을 선택하면 형식을 확인한 뒤 현재 작업공간(${kind === "sample" ? "샘플" : "실제"})을 덮어씁니다. 전체 앱(Next.js 버전)의 백업 파일도 복원할 수 있습니다.</p><input type="file" accept=".json" data-change="restore">`)}
+  ${card("백업 복원", `<p class="muted sm">작업 백업.json을 선택하면 형식을 확인한 뒤 현재 작업공간(${kind === "sample" ? "샘플" : "실제"})을 덮어씁니다.</p><input type="file" accept=".json" data-change="restore">`)}
   ${card("데이터 초기화", `<p class="muted sm">데이터는 이 브라우저의 localStorage에만 저장됩니다. 브라우저 데이터를 지우면 사라지므로 백업을 권장합니다.</p>${btn(kind === "sample" ? "샘플을 처음 상태로" : "실제 작업공간 초기화", "reset", { v: "danger" })}`)}`;
 }
 
@@ -742,7 +742,7 @@ document.addEventListener("change", async (e) => {
     case "txt-file": {
       const f = t.files?.[0];
       if (!f) return;
-      if (!/\.(txt|md)$/i.test(f.name)) return notify("HTML 한 장 버전은 TXT만 불러올 수 있습니다. PDF·DOCX는 전체 앱을 쓰거나 원문을 붙여넣으세요.", "error");
+      if (!/\.(txt|md)$/i.test(f.name)) return notify("HTML 한 장 버전은 TXT만 불러올 수 있습니다. PDF·DOCX는 본문을 복사해 붙여넣으세요.", "error");
       const buf = await f.arrayBuffer();
       let text = new TextDecoder("utf-8").decode(buf);
       if (text.includes("�")) { try { text = new TextDecoder("euc-kr").decode(buf); } catch {} }
