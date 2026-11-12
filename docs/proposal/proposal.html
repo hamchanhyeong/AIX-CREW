@@ -1,0 +1,522 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>재기지원 사업 운영규칙·요령 마련 과제 수행 기획서</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap">
+<style>
+  @page { size: A4; margin: 20mm 18mm 20mm 18mm; }
+  :root { --navy:#0B1B3F; --blue:#2152E8; --ink:#1F2937; --muted:#5A6478; --line:#D7DCE5; --tint:#EEF2FC; --orange:#B4530A; --orange-bg:#FDF1E4; --gray-bg:#F1F3F6; }
+  * { box-sizing: border-box; }
+  body { font-family: 'Noto Sans KR', sans-serif; color: var(--ink); font-size: 10pt; line-height: 1.65; margin: 0; background:#FFFFFF; word-break: keep-all; }
+  h1, h2, h3, h4 { color: var(--navy); line-height: 1.35; margin: 0; }
+  h2 { font-size: 16pt; font-weight: 900; padding: 0 0 6px 0; border-bottom: 2.5px solid var(--navy); margin: 0 0 12px 0; }
+  h2 .no { color: var(--blue); margin-right: 8px; }
+  h3 { font-size: 12pt; font-weight: 700; margin: 16px 0 6px 0; }
+  h4 { font-size: 10.5pt; font-weight: 700; margin: 10px 0 4px 0; }
+  p { margin: 0 0 8px 0; }
+  ul, ol { margin: 0 0 8px 0; padding-left: 20px; }
+  li { margin: 2px 0; }
+  .section { page-break-before: always; }
+  table { width: 100%; border-collapse: collapse; margin: 6px 0 12px 0; font-size: 9pt; page-break-inside: auto; }
+  tr { page-break-inside: avoid; }
+  th, td { border: 1px solid var(--line); padding: 5px 7px; vertical-align: top; text-align: left; }
+  th { background: var(--navy); color: #FFFFFF; font-weight: 700; }
+  td.c, th.c { text-align: center; }
+  .tag { display: inline-block; font-size: 8pt; font-weight: 700; padding: 0 6px; border-radius: 3px; line-height: 1.6; white-space: nowrap; vertical-align: 1px; }
+  .req { background: var(--navy); color: #FFFFFF; }
+  .prop { background: var(--tint); color: var(--blue); border: 1px solid #B9C9F5; }
+  .chk { background: var(--orange-bg); color: var(--orange); border: 1px solid #F0C99C; }
+  .ref { background: var(--gray-bg); color: var(--muted); border: 1px solid var(--line); }
+  .ok { background: #E7F4EC; color: #1E6B3A; border: 1px solid #B7DCC4; }
+  .no-impl { background: #F6E8E8; color: #8A2323; border: 1px solid #E2BDBD; }
+  .box { border: 1px solid var(--line); border-left: 5px solid var(--blue); background: #FAFBFE; padding: 10px 14px; margin: 8px 0 12px 0; page-break-inside: avoid; }
+  .box.warn { border-left-color: var(--orange); background: #FFFBF6; }
+  .box.navy { border-left-color: var(--navy); }
+  .box h4 { margin-top: 0; }
+  .small { font-size: 8.5pt; color: var(--muted); }
+  .clause { font-family: 'Noto Sans KR', sans-serif; background: #FFFFFF; border: 1px solid var(--line); padding: 8px 12px; margin: 6px 0; }
+  .clause p { margin: 0 0 4px 0; }
+  .hl { background: var(--orange-bg); }
+  .grid2 { display: flex; gap: 12px; }
+  .grid2 > div { flex: 1; }
+  .flow { display: flex; gap: 6px; align-items: stretch; margin: 6px 0 12px 0; }
+  .flow > div { flex: 1; border: 1px solid var(--line); border-top: 4px solid var(--blue); padding: 6px 8px; font-size: 8.5pt; background: #FFFFFF; }
+  .flow > div b { display: block; color: var(--navy); font-size: 9pt; }
+  .tree { margin: 6px 0 12px 0; }
+  .tree div { border: 1px solid var(--line); padding: 5px 10px; margin: 0 0 4px 0; font-size: 9pt; background: #FFFFFF; }
+  .tree .lv1 { margin-left: 0; } .tree .lv2 { margin-left: 18px; } .tree .lv3 { margin-left: 36px; } .tree .lv4 { margin-left: 54px; } .tree .lv5 { margin-left: 72px; }
+  .tree .ours { border: 1.5px solid var(--blue); background: var(--tint); }
+  .tree .dash { border-style: dashed; }
+  /* cover */
+  .cover { height: 255mm; display: flex; flex-direction: column; justify-content: space-between; }
+  .cover .top { border-top: 8px solid var(--navy); padding: 18mm 0 0 0; }
+  .cover .kicker { color: var(--blue); font-weight: 700; font-size: 11pt; letter-spacing: 1px; }
+  .cover h1 { font-size: 28pt; font-weight: 900; margin: 10px 0 12px 0; line-height: 1.3; }
+  .cover .sub { font-size: 12.5pt; color: var(--muted); }
+  .cover table { font-size: 10pt; width: 70%; }
+  .cover td:first-child { width: 32%; background: var(--gray-bg); font-weight: 700; color: var(--navy); }
+  .legend { display: flex; flex-wrap: wrap; gap: 8px 16px; font-size: 9pt; }
+  .toc { columns: 2; column-gap: 24px; font-size: 10pt; }
+  .toc div { break-inside: avoid; padding: 2px 0; border-bottom: 1px dotted var(--line); }
+</style>
+</head>
+<body>
+
+<!-- ===================== 표지 ===================== -->
+<div class="cover">
+  <div class="top">
+    <p class="kicker">AIX-CREW 2026 · 기업 현업과제 04 (법률·규정) · 과제 수행 기획서</p>
+    <h1>재기지원 사업<br>운영규칙·요령 마련 과제<br>수행 기획서</h1>
+    <p class="sub">기업 요구사항(운영규칙·요령 각 1부, 운영계획(안) 투입 시 수정사항 표기)을 중심으로 한 수행 방안과 이번 제출물(기획서·MVP)의 범위</p>
+  </div>
+  <div>
+    <table>
+      <tr><td>과제 제공기관</td><td>중소벤처기업진흥공단 창업지원처 (과제 제안·결과 검수)</td></tr>
+      <tr><td>기획서 작성 주체</td><td>AIX-CREW 2026 과제 04 수행팀 (학생 크루)</td></tr>
+      <tr><td>제출일</td><td>2026년 11월 14일</td></tr>
+      <tr><td>문서 성격</td><td>과제 수행팀의 제안 문서 (검토용)</td></tr>
+    </table>
+    <div class="box warn" style="width:100%">
+      <p style="margin:0"><b>이 문서는 중소벤처기업진흥공단이 작성하거나 승인한 공식 문서가 아닙니다.</b> 과제 카드·신청서와 공개자료를 바탕으로 수행팀이 작성한 기획서이며, 규정 문안·사업 조건·법령 해석은 모두 기관 확인 전의 검토용 내용입니다.</p>
+    </div>
+    <h4>표기 범례</h4>
+    <div class="legend">
+      <span><span class="tag req">기업 요구</span> 과제 카드·신청서에 명시된 내용</span>
+      <span><span class="tag prop">수행팀 제안</span> 수행팀이 추론·설계한 해결 방법</span>
+      <span><span class="tag chk">확인 필요</span> 기관 확인 또는 원문 대조 전에는 확정하지 않음</span>
+      <span><span class="tag ref">참고·보도</span> 언론 보도·타 사업 자료. 조문 근거로 쓰지 않음</span>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== 목차·요약 ===================== -->
+<div class="section">
+  <h2>목차</h2>
+  <div class="toc">
+    <div>요약</div>
+    <div>1. 기업 요구사항과 수행팀 해석의 구분</div>
+    <div>2. 배경: 정책 환경과 기관 현황</div>
+    <div>3. 해결해야 할 과제와 조문 작성 예시 재검토</div>
+    <div>4. 규정 체계와 법령 인용 검증</div>
+    <div>5. 해결 방안 ① 운영규칙·요령 작성 방안</div>
+    <div>6. 해결 방안 ② 수정사항 표기 기능</div>
+    <div>7. 이번 제출물: MVP 구현 현황</div>
+    <div>8. 이번 제출물과 향후 과제 수행 계획</div>
+    <div>9. 위험 요소와 대응</div>
+    <div>10. 기대효과와 검증 방법</div>
+    <div>11. 기관 확인 요청 사항</div>
+    <div>부록 A. 기존 기획안(15쪽) 검토·반영표</div>
+    <div>부록 B. 출처와 검증 상태</div>
+  </div>
+
+  <h2 style="margin-top:22px">요약</h2>
+  <table>
+    <tr><th style="width:22%">구분</th><th>내용</th></tr>
+    <tr><td><span class="tag req">기업 요구</span></td><td>재기지원 사업(3개 내역, 1,398억원) 추진을 위한 내부규정 마련. 기대 결과물은 <b>재기지원 사업 운영규칙 1부와 요령 1부 작성</b>, 그리고 <b>운영계획(안) 투입 시 수정사항 표기 기능</b>. 공개자료 기반, 2026-11-16 착수, 4주, 12월 초 초안 필요.</td></tr>
+    <tr><td><span class="tag prop">수행팀 제안</span></td><td>① 운영계획(안)·법령·참고 규정을 조항 단위로 연결하는 <b>근거 매핑</b>을 먼저 만들고, 이를 바탕으로 운영규칙·요령 초안을 작성합니다. ② 계획(안)이 바뀌면 바뀐 조건과 연결된 조문만 찾아 <b>신구대비표</b>로 표시하는 작성 지원 도구(MVP)를 함께 만듭니다.</td></tr>
+    <tr><td><span class="tag chk">확인 필요</span></td><td>3개 내역의 정확한 범위(아래 3개 사업과 같은지), 중진공이 직접 운영하는 범위, 운영규칙·요령의 구성, <b>수정사항 표기의 정확한 비교 대상</b>, 기관 내부자료의 외부 AI 전송 가능 여부.</td></tr>
+    <tr><td>이번 제출물<br>(2026-11-14)</td><td>본 기획서와 <b>시연용 MVP</b>(가상 자료 기반). 실제 운영규칙·요령 초안은 포함하지 않습니다. 기관의 운영계획(안)을 아직 받지 않았기 때문입니다.</td></tr>
+    <tr><td>향후 과제 수행<br>(2026-11-16~)</td><td>기관 확인 → 자료 수령 → 근거 매핑 → 운영규칙·요령 초안 → 기관 검토 반영 → 예산 확정 시 변경 반영. 12월 초 초안 전달을 목표로 하되 일정은 착수 시 기관과 확정합니다.</td></tr>
+  </table>
+</div>
+
+<!-- ===================== 1 ===================== -->
+<div class="section">
+  <h2><span class="no">1</span>기업 요구사항과 수행팀 해석의 구분</h2>
+  <p>기획 내용은 기업이 실제로 요구한 두 가지 결과물을 중심으로 정리합니다. 아래 표의 왼쪽은 과제 카드·신청서에 쓰인 내용이고, 오른쪽은 수행팀이 그 내용을 해석하거나 보완한 것입니다. 오른쪽 내용은 기관 확인 전까지 확정하지 않습니다.</p>
+  <table>
+    <tr><th style="width:32%">기업이 명시한 내용 <span class="tag req" style="background:#FFFFFF;color:var(--navy)">기업 요구</span></th><th style="width:40%">수행팀 해석·보완 <span class="tag prop">수행팀 제안</span></th><th>확인 상태</th></tr>
+    <tr><td>재기지원 사업 <b>운영규칙 1부</b> 작성</td><td>3개 내역에 공통으로 적용하는 기본 규정으로 가정(목적·정의·대상·선정·협약·사업비·사후관리·제재 등)</td><td><span class="tag chk">확인 필요</span> 공통 1부인지, 사업별로 나눌지</td></tr>
+    <tr><td>재기지원 사업 <b>요령 1부</b> 작성</td><td>운영규칙에서 위임한 세부 절차·기준·서식을 담는 하위 규정으로 가정</td><td><span class="tag chk">확인 필요</span> 운영규칙과 요령의 범위 구분, 기관 서식</td></tr>
+    <tr><td>계획(안) 투입 시 <b>수정사항 표기</b> 기능 포함</td><td>새 운영계획(안)을 넣으면 바뀐 조건과 연결된 조문을 찾아 신구대비표(현행/개정안/사유)로 표시</td><td><span class="tag chk">확인 필요</span> 무엇과 무엇을 비교하는지(6장)</td></tr>
+    <tr><td>재기지원 사업 <b>3개 내역, 1,398억원</b>, 2027년 1월 본격 운영, 12월 초 초안 필요</td><td>2027년 정부 예산안 보도의 재도전 3개 사업과 금액 합계가 일치함(2장)</td><td><span class="tag chk">확인 필요</span> 3개 내역이 해당 3개 사업인지, 규정 적용 범위</td></tr>
+    <tr><td>사업 <b>운영계획(안) 작성 완료</b>, 참고 가능한 규정 보유(창진원·중진공 유사사업)</td><td>운영계획(안)이 조문의 1차 입력이고, 유사사업 규정은 구조 참고용</td><td><span class="tag chk">확인 필요</span> 제공 시점·비기밀 범위</td></tr>
+    <tr><td>활용 데이터: <b>공개자료</b>(중소기업창업지원법, 창업·재도전성공패키지 지침 등)</td><td>법령·지침은 공개 원문을 근거로 쓰고, 기관 내부자료는 별도 보안 절차로 다룸(9장)</td><td><span class="tag chk">확인 필요</span> 내부자료의 외부 AI 전송 가능 여부</td></tr>
+    <tr><td>착수 2026-11-16, 4주, 크루 5명 내외</td><td>이번 제출(11-14)은 착수 전 기획 단계로 구분(8장)</td><td>—</td></tr>
+  </table>
+  <div class="box navy">
+    <h4>기업이 요구하지 않았지만 수행팀이 추가로 제안하는 것</h4>
+    <ul>
+      <li><span class="tag prop">수행팀 제안</span> 조문마다 근거(법령·지침 조항 또는 운영계획 항목)를 붙이는 근거 매핑표</li>
+      <li><span class="tag prop">수행팀 제안</span> 초안 작성과 변경 반영을 돕는 웹 기반 작성 지원 도구(MVP). 과제 카드의 "수정사항 표기 기능"을 구현하는 수단이며, 결과물 범위에 도구 자체를 포함할지는 <span class="tag chk">확인 필요</span></li>
+    </ul>
+  </div>
+</div>
+
+<!-- ===================== 2 ===================== -->
+<div class="section">
+  <h2><span class="no">2</span>배경: 정책 환경과 기관 현황</h2>
+  <h3>2.1 2027년 재도전 분야 예산안 <span class="tag ref">참고·보도</span></h3>
+  <p>2026년 9월 1일 발표된 중소벤처기업부 2027년 예산안 보도에 따르면, 재도전 분야 3개 사업에 합계 1,398억원이 편성되었습니다. <b>정부안이며 국회 심의 중이고, 확정은 12월로 예상</b>됩니다.</p>
+  <table>
+    <tr><th style="width:24%">사업(보도 기준 명칭)</th><th class="c" style="width:12%">예산안</th><th class="c" style="width:10%">구분</th><th>보도 내용</th></tr>
+    <tr><td>재도전성공학교</td><td class="c">595억원</td><td class="c">신규</td><td>청년창업사관학교의 입주형 지원 방식을 재창업에 적용, 전국 19곳(보도)</td></tr>
+    <tr><td>재도전성공패키지</td><td class="c">469억원</td><td class="c">확대</td><td>기존 사업 예산 약 3배 확대, 지원 대상 185곳 → 320곳(보도)</td></tr>
+    <tr><td>재도전응원프로젝트</td><td class="c">334억원</td><td class="c">신규</td><td>세부 선발 규모·한도·자격은 공개되지 않음</td></tr>
+  </table>
+  <div class="box warn">
+    <h4>이 표를 쓰는 범위</h4>
+    <ul>
+      <li>세 사업의 금액 합계는 과제 카드의 "3개 내역, 1,398억원"과 같습니다. 그러나 <b>이 세 사업이 이번 운영규칙·요령의 적용 대상으로 확정된 것은 아닙니다.</b> 중진공이 직접 운영하는 범위, 사업명·구성은 <span class="tag chk">확인 필요</span>입니다.</li>
+      <li>금액·규모는 국회 확정 전 정부안이므로 조문에 넣지 않습니다. 규정 초안에서는 【확인 필요】로 비워 두고, 확정된 운영계획(안)이 들어오면 반영합니다.</li>
+      <li>기존 기획안에 있던 "지원 한도 1억 → 1.5억원", "위기기업 포함", "130곳·최대 2억원 바우처", "중진공 운영 예정"은 공식 자료로 확인하지 못해 <b>본문에서 삭제</b>했습니다. 기관 자료로 확인되면 다시 반영합니다.</li>
+    </ul>
+  </div>
+
+  <h3>2.2 기관 현황 <span class="tag req">기업 요구</span></h3>
+  <div class="grid2">
+    <div class="box">
+      <h4>기관이 가진 것 (과제 카드 기준)</h4>
+      <ul>
+        <li>사업 운영계획(안) 작성 완료</li>
+        <li>참고 가능한 유사사업 규정(창업진흥원, 중진공)</li>
+        <li>공개 법령·지침(중소기업창업 지원법, 창업·재도전성공패키지 지침 등)</li>
+      </ul>
+    </div>
+    <div class="box warn">
+      <h4>아직 없는 것</h4>
+      <ul>
+        <li>재기지원 사업 운영규칙 1부</li>
+        <li>재기지원 사업 요령 1부</li>
+        <li>계획(안)이 바뀔 때 수정사항을 표기하는 방법</li>
+      </ul>
+    </div>
+  </div>
+  <p><b>불편을 겪는 사람:</b> 창업지원처의 사업 담당자. 12월 초까지 초안을 갖추고 2027년 1월 사업을 시작해야 하며, 같은 시기에 국회 예산 확정으로 금액·규모가 바뀔 수 있습니다.</p>
+  <p class="small">출처: AIX CREW 기업 현업과제 카드·과제 신청서(2026-11-12 발표 자료), 중기부 2027년 예산안 보도(2026-09-01), 이슈온 보도. 상세는 부록 B.</p>
+</div>
+
+<!-- ===================== 3 ===================== -->
+<div class="section">
+  <h2><span class="no">3</span>해결해야 할 과제와 조문 작성 예시 재검토</h2>
+  <h3>3.1 규정을 만들기 전에 풀어야 할 세 가지 <span class="tag prop">수행팀 제안</span></h3>
+  <table>
+    <tr><th style="width:26%">과제</th><th>내용</th><th style="width:28%">해결 방향</th></tr>
+    <tr><td><b>① 계획(안)은 규정이 아니다</b></td><td>개조식 운영계획(안)을 장·조·항·호의 조문으로 옮겨야 하고, 계획에 없는 절차 조항(이의신청·제재·비밀유지 등)이 필요한지 판단해야 합니다.</td><td>근거 매핑 후 조문 작성. 계획에 없는 조항은 근거와 함께 【확인 필요】로 제안</td></tr>
+    <tr><td><b>② 계획(안)과 예산이 아직 바뀐다</b></td><td>국회 예산 확정(12월)이 초안 전달 시기와 겹칩니다. 확정된 금액·규모를 빠르게 반영할 방법이 필요합니다.</td><td>수정사항 표기 기능(6장)</td></tr>
+    <tr><td><b>③ 적용 대상과 준비 수준이 확정되지 않았다</b></td><td>적용 대상 사업의 범위와 사업별 운영계획(안)의 완성도가 확인되지 않았습니다.</td><td>공통 조항부터 작성하고, 사업별 내용은 확인 후 작성(5장)</td></tr>
+  </table>
+
+  <h3>3.2 조문 작성 예시 재검토 (기존 기획안 5쪽)</h3>
+  <p>기존 기획안은 운영계획(안)의 개조식 선정 기준을 조문으로 옮긴 예시를 보여 주었습니다. 검토 결과 다음 두 가지 문제가 있어 수정했습니다.</p>
+  <div class="grid2">
+    <div>
+      <h4>운영계획(안) · 개조식 (기존 예시)</h4>
+      <div class="clause"><p>◦ 기업현장평가표 70점 이상</p><p>◦ 은행권 추천서 보유기업은 생략 가능</p></div>
+      <p class="small">예시 출처: 기존 기획안에 인용된 「2026 혁신바우처 재기컨설팅 세부 운영계획(안)」. 이번 사업의 운영계획(안)이 아니며 원문 대조 필요.</p>
+    </div>
+    <div>
+      <h4>요령(안) · 조문 (수정 예시)</h4>
+      <div class="clause">
+        <p><b>제○조(선정기준)</b></p>
+        <p>① 공단은 기업현장평가 결과 70점 이상인 기업을 지원대상으로 선정한다.</p>
+        <p>② 제1항에도 불구하고 은행권 추천서를 보유한 기업은 기업현장평가를 생략할 수 있다. <span class="hl">이 경우 선정 기준은 【확인 필요】로 한다.</span></p>
+        <p class="hl">③ 【확인 필요】 평가위원의 제척·회피 기준(이해관계가 있는 평가위원 제외 등)의 근거 조항</p>
+      </div>
+    </div>
+  </div>
+  <table>
+    <tr><th style="width:30%">발견한 문제</th><th>수정 내용</th></tr>
+    <tr><td><b>논리적 공백:</b> 현장평가를 생략한 기업은 "70점 이상" 기준을 적용할 수 없는데, 대신 무엇으로 선정하는지가 없음</td><td>별도 선정 기준(서면평가, 추천서 요건 등)이 운영계획(안)이나 근거 규정에서 확인되지 않았으므로 제②항에 【확인 필요】를 표시. 수행팀이 임의 기준을 만들지 않음</td></tr>
+    <tr><td><b>근거 없는 보충 조항:</b> 기존 예시 ③(이해관계 평가위원 제외)은 계획에 없는 내용을 채운 것인데 근거 조항이 제시되지 않음</td><td>필요성은 제안하되 문안은 근거 확인 전까지 【확인 필요】로 표시</td></tr>
+  </table>
+  <div class="box">
+    <p style="margin:0"><b>이 예시가 보여 주는 과제의 핵심:</b> 계획(안)을 문장만 바꿔 옮기는 것이 아니라, 조문 사이의 공백을 찾아 기관에 확인을 요청하고, 확인된 근거가 있을 때만 조문을 채우는 것입니다.</p>
+  </div>
+</div>
+
+<!-- ===================== 4 ===================== -->
+<div class="section">
+  <h2><span class="no">4</span>규정 체계와 법령 인용 검증</h2>
+  <h3>4.1 상위 규범의 관계 (검증 결과 반영)</h3>
+  <p>기존 기획안은 "법률 → 시행령 → 통합관리지침(중기부 고시) → 운영규칙 → 요령" 순서로 그렸습니다. 확인 결과 <b>통합관리지침은 법률이 아니라 중기부 「중소기업창업 지원사업 운영요령」 제38조에 근거한 하위 지침</b>이어서, 그 사이에 운영요령이 있습니다. 이에 따라 체계도를 아래처럼 수정합니다.</p>
+  <div class="tree">
+    <div class="lv1"><b>법률</b> 「중소기업창업 지원법」 <span class="tag ok">확인</span></div>
+    <div class="lv2"><b>대통령령</b> 「중소기업창업 지원법 시행령」 <span class="tag ok">확인</span></div>
+    <div class="lv3"><b>중기부 행정규칙</b> 「중소기업창업 지원사업 운영요령」 <span class="tag chk">원문·고시 번호 확인 필요</span></div>
+    <div class="lv4"><b>지침</b> 「중소기업창업 지원사업 통합관리지침」 (운영요령 제38조에 근거, 제14차 개정본 '25.12.23. 확인) <span class="tag ok">확인</span></div>
+    <div class="lv5 ours"><b>기관 내부규정 (결과물)</b> 재기지원 사업 운영규칙 · 재기지원 사업 요령 — 체계상 위치, 제정 절차, 명칭 <span class="tag chk">확인 필요</span></div>
+    <div class="lv5 dash"><b>공고</b> 사업별 모집 공고 <span class="tag ref">참고·보도</span> 2027년 1~2월 예상(보도)</div>
+  </div>
+  <div class="box warn">
+    <h4>명칭 혼동 주의</h4>
+    <ul>
+      <li>중기부의 「중소기업창업 지원사업 <b>운영요령</b>」(상위 행정규칙)과 이번 결과물인 재기지원 사업 <b>요령</b>(기관 내부규정)은 서로 다른 문서입니다. 기획서와 초안에서는 결과물을 "재기지원 사업 요령(안)"으로 부르고, 상위 규범은 정식 명칭으로 씁니다.</li>
+      <li>재기지원 사업이 중기부 위탁사업인지 중진공 자체사업인지에 따라 적용되는 상위 규범과 위임 구조가 달라집니다. <span class="tag chk">확인 필요</span></li>
+      <li>「재도전성공패키지 세부관리기준」은 <b>다른 사업의 규정</b>입니다. 구조(장 구성)를 참고하는 모델로만 쓰고, 이번 사업의 상위 규범으로 보지 않습니다.</li>
+    </ul>
+  </div>
+
+  <h3>4.2 법령 조항 인용 검증</h3>
+  <p>기존 기획안에 인용된 조항을 공개자료로 대조했습니다. 국가법령정보센터 원문에 직접 접근하지 못한 경우가 있어, 확인 정도에 따라 구분합니다. <b>확인하지 못한 조항 번호는 본문에서 뺐습니다.</b></p>
+  <table>
+    <tr><th style="width:28%">조항</th><th>확인된 내용</th><th style="width:22%">검증 상태</th></tr>
+    <tr><td>법 제42조</td><td>재창업지원계획의 수립·시행(중기부장관)</td><td><span class="tag ok">확인</span> 현행 문언 대조 필요</td></tr>
+    <tr><td>법 제43조</td><td>재창업자 등에 대한 성실경영 평가, 평가 기준 고시</td><td><span class="tag ok">확인</span> 현행 문언 대조 필요</td></tr>
+    <tr><td>법 제63조</td><td>창업지원사업 참여제한(부정수급, 목적 외 사용, 환수금·제재부가금 미납 등)</td><td><span class="tag ok">확인</span></td></tr>
+    <tr><td>시행령 제40조, 별표 4</td><td>참여제한 기간·환수 범위의 사유별 기준</td><td><span class="tag ok">확인</span></td></tr>
+    <tr><td>법 제10조, 제14조</td><td>지원사업의 범위(통합관리지침 정의에서 인용), 창업지원사업 통합공고의 근거</td><td><span class="tag ok">확인</span> 2차 자료 기준</td></tr>
+    <tr><td>법 제2조</td><td>재창업·재창업기업 정의가 있는 것으로 보이나 조항 위치 미확인</td><td><span class="tag chk">확인 필요</span></td></tr>
+    <tr><td>법 제5·12·62·64조, 시행령 제2·4·7·41조 (기존 기획안 인용)</td><td>인용 취지(지원 대상, 환수, 제재부가금, 비밀유지 등)와 조항이 맞는지 확인하지 못함</td><td><span class="tag no-impl">본문에서 제외</span> 원문 확인 후 재기재</td></tr>
+    <tr><td>재도전성공패키지 세부관리기준 제4·6·8·15·28·29조</td><td>수행팀 확보 자료로 기존 기획안에 인용. 시행일(2026.4.23)과 조항 내용은 원문 재대조 필요</td><td><span class="tag ref">참고</span> <span class="tag chk">확인 필요</span></td></tr>
+  </table>
+  <p class="small">초안 작성 단계에서는 모든 조문 근거를 국가법령정보센터 현행 원문(시행일 명시)과 다시 대조하고, 대조하지 못한 조항 번호는 조문에 쓰지 않습니다.</p>
+</div>
+
+<!-- ===================== 5 ===================== -->
+<div class="section">
+  <h2><span class="no">5</span>해결 방안 ① 운영규칙·요령 작성 방안</h2>
+  <h3>5.1 작성 절차 <span class="tag prop">수행팀 제안</span></h3>
+  <div class="flow">
+    <div><b>① 자료 수령</b>운영계획(안), 유사사업 규정, 법령·지침 원문</div>
+    <div><b>② 근거 매핑</b>규정 항목별로 계획 항목·법령 조항·참고 조문 연결</div>
+    <div><b>③ 목차 확정</b>기관 운영계획(안) 확인 후 장·조 구성 확정</div>
+    <div><b>④ 조문 작성</b>근거가 있는 내용만 조문화, 없으면 【확인 필요】</div>
+    <div><b>⑤ 사람 검수</b>원문 대조, 용어 통일, 규칙·요령 간 일치</div>
+  </div>
+  <h3>5.2 구성 가안 <span class="tag prop">수행팀 제안</span> <span class="tag chk">확인 필요</span></h3>
+  <div class="box warn"><p style="margin:0"><b>운영규칙과 요령의 구체적인 구성은 기관 내부 운영계획(안)을 확인한 뒤 확정합니다.</b> 아래는 착수 전 검토를 위한 가안이며, 장·편의 수와 이름은 바뀔 수 있습니다.</p></div>
+  <div class="grid2">
+    <div>
+      <h4>운영규칙(안) 가안 — 공통 기본 규정</h4>
+      <table>
+        <tr><th style="width:22%">장</th><th>담을 내용(예)</th></tr>
+        <tr><td>총칙</td><td>목적, 정의, 적용 범위</td></tr>
+        <tr><td>사업 내용</td><td>사업 구분, 지원 대상·제외 대상, 지원 한도</td></tr>
+        <tr><td>추진체계</td><td>운영 조직, 위원회, 수행기관 관리</td></tr>
+        <tr><td>선정</td><td>공고, 신청, 평가, 이의신청</td></tr>
+        <tr><td>협약·사업비</td><td>협약 체결·변경·해약, 지급·정산</td></tr>
+        <tr><td>사후관리</td><td>점검, 결과보고, 성과관리</td></tr>
+        <tr><td>제재</td><td>환수, 참여제한(법 제63조, 시행령 별표 4 연계 검토)</td></tr>
+        <tr><td>보칙</td><td>요령 위임, 부칙</td></tr>
+      </table>
+    </div>
+    <div>
+      <h4>요령(안) 가안 — 세부 집행 기준</h4>
+      <table>
+        <tr><th style="width:26%">편</th><th>담을 내용(예)</th></tr>
+        <tr><td>공통편</td><td>평가 운영, 사업비 집행·정산 절차, 서식</td></tr>
+        <tr><td>사업별 편</td><td>적용 대상 사업이 확정되면 사업별 선정 기준표·지원 내용·일정</td></tr>
+      </table>
+      <p class="small">사업별 편의 수와 대상은 적용 대상 확정 후 결정합니다. 기존 기획안의 "공통편 + 3개 사업 편"은 3개 사업이 모두 적용 대상일 때의 가안입니다.</p>
+    </div>
+  </div>
+
+  <h3>5.3 사업별 작성 전략 (가설) <span class="tag prop">수행팀 제안</span></h3>
+  <p>적용 대상이 보도된 3개 사업으로 확정되는 경우를 가정한 작성 방식입니다. 확정 전에는 공통 조항부터 작성합니다.</p>
+  <table>
+    <tr><th style="width:20%">유형</th><th style="width:22%">해당 가능 사업</th><th>작성 방식</th></tr>
+    <tr><td>수정형</td><td>재도전성공패키지</td><td>기존 사업의 규정 구조를 참고하되, 수치·기준은 이번 운영계획(안)에서 확인된 값만 반영</td></tr>
+    <tr><td>전환형</td><td>재도전성공학교</td><td>입주형 지원 사업의 운영 구조를 참고하고, 재창업 대상에 맞는 기준은 운영계획(안) 확인 후 작성</td></tr>
+    <tr><td>신규형</td><td>재도전응원프로젝트</td><td>세부 내용이 공개되지 않았으므로 틀만 잡고 내용은 【확인 필요】로 남김</td></tr>
+  </table>
+
+  <h3>5.4 다른 사업의 세부 기준을 그대로 쓰지 않는 원칙</h3>
+  <div class="box">
+    <p>기존 기획안은 재도전성공패키지 세부관리기준의 수치(위원회 구성·의결 정족수, 정부지원 비율·현금 부담 비율, 추가선정 기한)를 "바로 쓸 수 있는 기준"으로 제시했습니다. <b>다른 사업의 기준을 이번 사업에 그대로 적용하면 근거 없는 조문이 되므로 이 표현을 삭제했습니다.</b></p>
+    <ul>
+      <li>유사사업 규정은 <b>조항 구성과 문안 형식의 참고</b>로만 씁니다.</li>
+      <li>수치·비율·기한은 이번 사업의 운영계획(안) 또는 상위 규범에서 확인된 값만 조문에 넣습니다.</li>
+      <li>참고 규정의 수치를 제안할 때는 "참고: ○○사업 기준"이라고 출처를 밝히고 【확인 필요】로 표시해 기관이 채택 여부를 정하게 합니다.</li>
+    </ul>
+  </div>
+</div>
+
+<!-- ===================== 6 ===================== -->
+<div class="section">
+  <h2><span class="no">6</span>해결 방안 ② 수정사항 표기 기능</h2>
+  <p><span class="tag req">기업 요구</span> 과제 카드에는 "계획(안) 투입 시 수정사항 표기 기능 포함"이라고만 되어 있습니다. <b>무엇과 무엇을 비교해 수정사항으로 표시할지는 명시되어 있지 않으므로 기업 확인이 필요합니다.</b> 수행팀이 생각한 비교 대상 후보는 다음과 같습니다.</p>
+  <table>
+    <tr><th style="width:6%" class="c">안</th><th style="width:30%">비교 대상</th><th>표시 결과</th><th style="width:24%">MVP 반영</th></tr>
+    <tr><td class="c">A</td><td>이전 운영계획(안) ↔ 새 운영계획(안)</td><td>바뀐 사업 조건(금액·규모 등)과 그 조건에 연결된 조문만 찾아 수정안과 신구대비표 작성</td><td>기본 흐름으로 개발 중(7장)</td></tr>
+    <tr><td class="c">B</td><td>저장된 규정 초안 버전 ↔ 새 버전</td><td>조문 단위 추가·삭제·수정 표시</td><td>비교 기준 선택지로 개발 중</td></tr>
+    <tr><td class="c">C</td><td>유사사업 참고 규정 ↔ 새 초안</td><td>참고 규정과 달라진 부분 표시(참고 규정을 "현행 규정"으로 부르지 않음)</td><td>비교 기준 선택지로 개발 중</td></tr>
+    <tr><td class="c">D</td><td>상위 법령·지침 개정 전 ↔ 개정 후</td><td>개정된 상위 조항을 근거로 쓰는 조문 표시</td><td><span class="tag no-impl">미구현</span> 계획 없음</td></tr>
+    <tr><td class="c">E</td><td>운영계획(안) ↔ 기관의 기존 규정(존재하는 경우)</td><td>현행 규정 대비 개정 사항</td><td><span class="tag no-impl">미구현</span> 기존 규정 존재 여부 확인 필요</td></tr>
+  </table>
+  <div class="box warn">
+    <h4>기관에 확인할 내용</h4>
+    <ul>
+      <li>"수정사항"이 위 A~E 중 무엇인지(복수 가능), 그리고 비교 기준이 되는 "현행"이 무엇인지</li>
+      <li>표시 형식: 신구대비표(현행 / 개정안 / 사유)로 충분한지, 기관 고유 양식이 있는지</li>
+      <li>수정사항을 표시만 하면 되는지, 수정이 반영된 문서 파일까지 필요한지</li>
+    </ul>
+  </div>
+  <h3>예시 — A안의 출력 형태 (시연용 가상 값)</h3>
+  <table>
+    <tr><th style="width:16%">조항</th><th style="width:22%">변경 전</th><th style="width:22%">변경 제안</th><th>변경 사유·근거</th><th style="width:12%">반영 상태</th></tr>
+    <tr><td>지원 한도</td><td>기업당 최대 1억원</td><td>기업당 최대 1.5억원</td><td>새 운영계획(안)의 지원 한도 변경</td><td>반영</td></tr>
+  </table>
+  <p class="small">위 금액은 MVP 시연용 <b>가상 자료</b>이며 실제 사업 조건이 아닙니다. 기존 기획안의 "185개사 → 320개사" 예시는 보도 수치를 조문 예시로 쓴 것이어서 삭제했습니다.</p>
+  <h3>설계 원칙 <span class="tag prop">수행팀 제안</span></h3>
+  <ul>
+    <li>문자열 일괄 치환이 아니라 <b>조건 ↔ 조문 연결</b>로만 반영합니다. 같은 숫자가 있어도 연결되지 않은 조문은 바꾸지 않습니다.</li>
+    <li>수정안은 담당자가 조문별로 반영·보류를 결정하며, 자동 반영하지 않습니다.</li>
+    <li>연결되지 않은 조문은 "자동 검토 범위 밖"으로 표시해 사람이 확인하게 합니다.</li>
+  </ul>
+</div>
+
+<!-- ===================== 7 ===================== -->
+<div class="section">
+  <h2><span class="no">7</span>이번 제출물: MVP 구현 현황</h2>
+  <div class="box warn">
+    <h4>현황 확인 기준</h4>
+    <p style="margin:0">MVP는 별도 세션에서 개발 중입니다. 프로젝트에 <b>MVP_STATUS.md가 없어</b> 최종 제출본의 구현 상태를 확정할 수 없습니다. 아래 표는 개발 브랜치의 README·기능 명세·검증 기록(2026-11-12, 최신 커밋 f0cb4f5)을 읽고 정리한 것입니다. 이 문서에서는 어떤 기능도 "구현 완료"로 표시하지 않으며, 제출 시점에 MVP 담당자가 최종 동작을 확인해야 합니다.</p>
+  </div>
+  <table>
+    <tr><th style="width:26%">기능</th><th>내용</th><th style="width:30%">상태</th></tr>
+    <tr><td>자료 등록</td><td>운영계획(안)·법령·지침·유사사업 규정·배경자료 구분 등록. TXT·텍스트 PDF·DOCX 읽기</td><td><span class="tag chk">개발 중 · 확인 필요</span> 검증 기록상 시연 통과. HWP·스캔 PDF는 지원하지 않음</td></tr>
+    <tr><td>사업 조건 확인</td><td>"항목: 값" 형식에서 조건 추출, 담당자 확정. 빈 값은 채우지 않음</td><td><span class="tag chk">개발 중 · 확인 필요</span> 가상 자료로만 시연</td></tr>
+    <tr><td>운영규칙·요령 초안 작성</td><td>조문 템플릿에 확정된 조건 값을 넣어 초안 작성. 근거 없는 값은 【확인 필요】</td><td><span class="tag chk">개발 중 · 확인 필요</span> 기본은 템플릿 방식(AI 분석 아님)</td></tr>
+    <tr><td>조항별 AI 작성 제안</td><td>API 키 설정 시 조항별 문안 제안, 출처·인용 검증 실패 시 결과 폐기</td><td><span class="tag chk">확인 필요</span> 실제 자료·API 환경 검증 기록 없음</td></tr>
+    <tr><td>근거 패널·검토 목록</td><td>조항별 근거 후보 표시, 근거 미연결·인용 불일치·미확정 조건 점검</td><td><span class="tag chk">개발 중 · 확인 필요</span></td></tr>
+    <tr><td>수정사항 표기(6장 A·B·C안)</td><td>계획 변경 시 연결 조항만 수정안 → 개별 반영·보류 → 신구대비표</td><td><span class="tag chk">개발 중 · 확인 필요</span> 가상 시나리오(1억→1.5억)로 시연 통과 기록</td></tr>
+    <tr><td>문서 내보내기</td><td>운영규칙·요령 초안, 신구대비표 DOCX, 근거 매핑표 CSV</td><td><span class="tag chk">확인 필요</span> 파일 생성은 기록됨. Word·한글에서 열기 미검증</td></tr>
+    <tr><td>상위 법령·지침 개정 자동 대조(6장 D안)</td><td>—</td><td><span class="tag no-impl">미구현</span></td></tr>
+    <tr><td>실제 기관 자료로 초안 작성</td><td>—</td><td><span class="tag no-impl">미수행</span> 운영계획(안) 미수령</td></tr>
+    <tr><td>로그인·공동 편집·기관 PC 설치</td><td>—</td><td><span class="tag no-impl">범위 밖</span> 단일 사용자 로컬 실행</td></tr>
+  </table>
+  <p>이번에 제출하는 MVP는 <b>가상 자료로 작성 흐름을 보여 주는 시연용</b>입니다. 실제 사업 조건이나 법령 해석이 들어 있지 않으며, 산출 문서는 모두 검토용 초안입니다.</p>
+</div>
+
+<!-- ===================== 8 ===================== -->
+<div class="section">
+  <h2><span class="no">8</span>이번 제출물과 향후 과제 수행 계획</h2>
+  <h3>8.1 이번 제출물의 완성 범위 (제출 기한 2026년 11월 14일)</h3>
+  <table>
+    <tr><th style="width:24%">제출물</th><th>포함</th><th style="width:34%">포함하지 않음</th></tr>
+    <tr><td><b>과제 수행 기획서</b>(본 문서)</td><td>기업 요구사항 정리, 해결 방안, 규정 구성 가안, 수정사항 표기 설계, MVP 현황, 위험 요소, 기관 확인 사항</td><td>확정된 규정 구성, 확정된 법령 해석</td></tr>
+    <tr><td><b>MVP</b>(시연용)</td><td>가상 자료로 자료 등록 → 초안 → 변경 반영 → 신구대비표 → 내보내기 흐름 시연</td><td>실제 운영규칙·요령 초안, 실제 사업 조건, 기관 PC 설치</td></tr>
+  </table>
+
+  <h3>8.2 향후 기업과제 수행 계획 (2026-11-16 착수 이후)</h3>
+  <p>최종 규정 초안은 착수 후 기관 자료를 받아 작성합니다. 과제 카드의 목표는 12월 초 초안 전달이며, 세부 일정은 착수 시 기관과 확정합니다.</p>
+  <table>
+    <tr><th style="width:5%" class="c">단계</th><th style="width:22%">작업</th><th>산출물</th><th style="width:26%">선행 조건</th></tr>
+    <tr><td class="c">1</td><td>착수·범위 확인</td><td>확인 사항 답변 정리(11장), 적용 대상·구성·비교 대상 확정</td><td>기관 착수 회의</td></tr>
+    <tr><td class="c">2</td><td>자료 수령·근거 조사</td><td>법령·지침 현행 원문 확보, 근거 매핑표</td><td>운영계획(안)·유사 규정 제공</td></tr>
+    <tr><td class="c">3</td><td>운영규칙(안) 작성</td><td>운영규칙 초안 1부(조문별 근거 표시)</td><td>목차 확정</td></tr>
+    <tr><td class="c">4</td><td>요령(안) 작성</td><td>요령 초안 1부, 서식 목록</td><td>운영규칙 위임 사항 확정</td></tr>
+    <tr><td class="c">5</td><td>검수·기관 피드백 반영</td><td>수정 초안, 【확인 필요】 목록</td><td>기관 검토 의견</td></tr>
+    <tr><td class="c">6</td><td>변경 반영</td><td>확정된 계획(안) 반영 신구대비표·수정 초안</td><td>국회 예산 확정·계획(안) 수정</td></tr>
+  </table>
+  <p class="small">MVP는 2~6단계에서 작성 보조 도구로 쓰며, 실제 기관 자료 투입은 9장의 보안 조건을 충족한 뒤에 합니다.</p>
+</div>
+
+<!-- ===================== 9 ===================== -->
+<div class="section">
+  <h2><span class="no">9</span>위험 요소와 대응</h2>
+  <h3>9.1 기관 내부자료 보안과 외부 AI API 사용</h3>
+  <div class="box warn">
+    <p style="margin:0">운영계획(안)·유사사업 규정 등 기관 내부자료를 외부 AI API(클라우드 LLM)에 보내면, 자료가 기관 밖 서버로 전송됩니다. 제공업체의 보관·처리 정책과 기관 보안 규정에 따라 <b>정보 유출 위험</b>이 생길 수 있습니다. 수행팀 저장소(GitHub)나 개인 PC를 통한 유출 가능성도 있습니다.</p>
+  </div>
+  <table>
+    <tr><th style="width:30%">위험</th><th>대응</th></tr>
+    <tr><td>내부자료가 외부 AI API로 전송됨</td><td>
+      <ul>
+        <li>기관이 외부 AI 사용을 승인하기 전에는 <b>공개자료(법령·지침·보도)만</b> AI에 보냄</li>
+        <li>내부자료는 기본적으로 AI를 쓰지 않는 템플릿 방식으로 작성하고, 자료마다 "외부 전송 허용" 여부를 표시해 허용한 자료만 전송(MVP 설계 반영 여부 <span class="tag chk">확인 필요</span>)</li>
+        <li>전송할 때도 전체 문서가 아니라 필요한 원문 조각만 보냄</li>
+        <li>사용할 API의 데이터 보관·학습 활용 정책을 확인하고 기관 정보보호 담당과 사전 협의</li>
+      </ul></td></tr>
+    <tr><td>저장소·PC를 통한 유출</td><td>
+      <ul>
+        <li>기관 내부자료와 개인정보(담당자 연락처 등)는 공개 저장소에 올리지 않음</li>
+        <li>작업 데이터 폴더는 버전 관리에서 제외하고, 과제 종료 시 수행팀 PC의 내부자료 삭제</li>
+        <li>MVP는 인증이 없으므로 기관 자료가 들어간 상태로 외부에 배포하지 않음</li>
+      </ul></td></tr>
+    <tr><td>API 키 노출</td><td>키는 서버 환경변수로만 관리하고 저장소에 커밋하지 않음</td></tr>
+  </table>
+  <h3>9.2 그 밖의 위험</h3>
+  <table>
+    <tr><th style="width:28%">위험</th><th style="width:24%">영향</th><th>대응</th></tr>
+    <tr><td>적용 대상·구성 미확정</td><td>목차와 조문 전체가 바뀜</td><td>공통 조항부터 작성, 착수 시 범위 확정</td></tr>
+    <tr><td>예산·계획(안) 확정 지연</td><td>금액·규모 조문 미확정</td><td>【확인 필요】로 비워 두고 확정 시 변경 반영 기능으로 일괄 반영</td></tr>
+    <tr><td>AI 문안의 근거 오류·없는 조항 생성</td><td>규정 신뢰도 하락</td><td>모든 조문에 근거 표시, 법령 조항 번호는 원문에서 재확인, 근거 없으면 【확인 필요】, 사람 검수 필수</td></tr>
+    <tr><td>다른 사업 기준의 잘못된 적용</td><td>근거 없는 수치가 조문에 들어감</td><td>참고 규정 수치는 출처 표시 + 【확인 필요】, 기관이 채택 결정(5.4)</td></tr>
+    <tr><td>법령 원문 확인 지연</td><td>조항 인용 오류</td><td>국가법령정보센터 현행 원문을 시행일과 함께 보관, 미대조 조항은 쓰지 않음</td></tr>
+    <tr><td>참고 규정 원문 확보 지연</td><td>사업별 편 작성 지연</td><td>확보한 공개 법령으로 공통 조항부터 작성, 원문 수령 후 보완</td></tr>
+    <tr><td>제출 형식(HWP) 요구</td><td>변환 작업 발생</td><td>DOCX로 작성 후 한글에서 변환 가능 여부 착수 시 확인</td></tr>
+  </table>
+</div>
+
+<!-- ===================== 10 ===================== -->
+<div class="section">
+  <h2><span class="no">10</span>기대효과와 검증 방법</h2>
+  <p>아래 효과는 <b>기대하는 효과이며 아직 검증되지 않았습니다.</b> 성능이나 시간 절감 수치는 측정 전이므로 제시하지 않고, 과제 수행 중 확인할 방법을 함께 적습니다.</p>
+  <table>
+    <tr><th style="width:24%">기대효과</th><th>설명</th><th style="width:34%">검증 방법</th></tr>
+    <tr><td>검수 부담 완화</td><td>조문마다 근거가 붙어 있어 담당자가 원문을 다시 찾는 수고를 줄일 수 있을 것으로 기대</td><td>기관 검토 시 근거 표시가 검수에 도움이 되었는지 의견 수렴, 근거 미표시 조문 수 집계</td></tr>
+    <tr><td>변경 대응 지원</td><td>계획(안)이 바뀌면 연결된 조문 후보를 찾아 신구대비표로 보여 줌</td><td>확정 계획(안) 투입 시 수작업 대조 결과와 비교해 누락·오탐 확인</td></tr>
+    <tr><td>확인 필요 사항의 가시화</td><td>근거가 없거나 미확정인 내용이 【확인 필요】로 모여 기관이 결정할 항목이 분명해짐</td><td>【확인 필요】 목록을 기관과 함께 해소하며 건수 변화 확인</td></tr>
+    <tr><td>작성 시간</td><td>시간 절감 효과는 아직 측정하지 않음</td><td>시범 작성 시 단계별 소요 시간 기록(수치 목표는 정하지 않음)</td></tr>
+  </table>
+  <p class="small">기존 기획안의 "업로드부터 다운로드까지 30분 이내", "검수 시간 단축", "바로 결재에 올릴 수 있는 초안" 같은 단정적 표현은 삭제했습니다. 산출물은 모두 기관 검토가 필요한 초안입니다.</p>
+</div>
+
+<!-- ===================== 11 ===================== -->
+<div class="section">
+  <h2><span class="no">11</span>기관 확인 요청 사항</h2>
+  <p>아래 항목은 답변을 받기 전까지 규정 초안에서 【확인 필요】로 남깁니다.</p>
+  <table>
+    <tr><th style="width:5%" class="c">#</th><th style="width:22%">분류</th><th>확인할 내용</th><th style="width:22%">영향 범위</th></tr>
+    <tr><td class="c">1</td><td>적용 범위</td><td>"3개 내역"의 정확한 사업명·구성, 보도된 3개 사업과 같은지, 중진공이 직접 운영하는 범위</td><td>운영규칙 적용 범위, 요령 편 구성</td></tr>
+    <tr><td class="c">2</td><td>사업 성격</td><td>중기부 위탁사업인지 중진공 자체사업인지</td><td>상위 규범, 위임 구조</td></tr>
+    <tr><td class="c">3</td><td>문서 구조</td><td>운영규칙을 공통 1부로 할지, 운영규칙과 요령의 범위 구분, 기관 내부규정 서식(조문 체계·부칙·별표·별지)</td><td>목차 전체</td></tr>
+    <tr><td class="c">4</td><td>수정사항 표기</td><td>비교 대상(6장 A~E), 신구대비표 양식, 수정 반영 파일 필요 여부</td><td>기능 설계</td></tr>
+    <tr><td class="c">5</td><td>자료 제공</td><td>운영계획(안)·유사사업 규정 원문 제공 시점과 비기밀 범위</td><td>초안 착수 시점</td></tr>
+    <tr><td class="c">6</td><td>보안</td><td>기관 내부자료의 외부 AI API 전송 가능 여부, 기관 AI 사용 지침</td><td>작성 방식(9장)</td></tr>
+    <tr><td class="c">7</td><td>사업 조건</td><td>지원 대상·제외 대상·한도·분담 비율·선정 방식, 성실경영 평가 주체, 현장평가 생략 기업의 선정 기준</td><td>사업 내용·선정 조문</td></tr>
+    <tr><td class="c">8</td><td>결과물 범위</td><td>규정 문서만인지, 작성 지원 도구(MVP)까지인지. 제출 형식(HWP/DOCX/PDF)</td><td>최종 산출물</td></tr>
+  </table>
+</div>
+
+<!-- ===================== 부록 A ===================== -->
+<div class="section">
+  <h2><span class="no">A</span>부록 · 기존 기획안(15쪽) 검토·반영표</h2>
+  <p>기존 슬라이드형 기획안 15쪽을 다시 검토해 지적사항을 본문에 반영했습니다.</p>
+  <table>
+    <tr><th style="width:9%" class="c">쪽</th><th style="width:20%">기존 내용</th><th>발견한 문제</th><th style="width:30%">본 기획서의 반영</th></tr>
+    <tr><td class="c">1</td><td>표지</td><td>"중소벤처기업진흥공단 창업지원처"만 표기되어 기관 공식 문서로 오해될 수 있음</td><td>표지에 과제 제공기관과 작성 주체(수행팀)를 구분하고, 공식 문서가 아님을 명시</td></tr>
+    <tr><td class="c">2</td><td>3대 사업 예산</td><td>보도 수치(한도 1억→1.5억, 130곳·2억원, 위기기업 포함 등)를 확정 사실처럼 제시, 3개 사업을 적용 대상으로 단정</td><td>2.1: 정부안·보도로 표시, 미확인 수치 삭제, 적용 대상은 확인 필요</td></tr>
+    <tr><td class="c">3</td><td>기관 현황</td><td>과제 카드 내용으로 대체로 정확</td><td>2.2에 유지, 출처 표시</td></tr>
+    <tr><td class="c">4</td><td>핵심 과제 3가지</td><td>"세 사업의 준비 수준이 다르다"는 확인되지 않은 전제</td><td>3.1: "적용 대상과 준비 수준이 확정되지 않았다"로 수정</td></tr>
+    <tr><td class="c">5</td><td>조문 작성 예시</td><td>현장평가 생략 기업의 선정 기준 공백, 근거 없는 보충 조항</td><td>3.2: 【확인 필요】 표시, 근거 확인 전 문안 확정 안 함</td></tr>
+    <tr><td class="c">6</td><td>해결 방법</td><td>기업 요구와 수행팀 해법이 섞여 있음</td><td>1장 구분표, 5·6장에 제안 표시</td></tr>
+    <tr><td class="c">7</td><td>규정 체계</td><td>중기부 운영요령 누락, 통합관리지침을 고시로 표기, 세부관리기준 위치 모호</td><td>4.1: 체계 수정, 명칭 혼동 주의</td></tr>
+    <tr><td class="c">8</td><td>사업별 작성 전략</td><td>3개 사업을 확정 대상으로 전제</td><td>5.3: 가설로 표시</td></tr>
+    <tr><td class="c">9</td><td>참고 자료 우선순위</td><td>대체로 타당, 일부 자료 상태 미확인</td><td>부록 B에 검증 상태와 함께 정리</td></tr>
+    <tr><td class="c">10</td><td>결과물 3가지</td><td>웹사이트를 기업 요구 결과물처럼 표현</td><td>1장: 도구는 수행팀 제안, 범위는 확인 필요</td></tr>
+    <tr><td class="c">11</td><td>운영규칙 8개 장</td><td>검증되지 않은 법 조항 다수 인용, 구성을 확정처럼 제시</td><td>4.2 검증표, 5.2 가안 표시와 "운영계획(안) 확인 후 확정" 명시</td></tr>
+    <tr><td class="c">12</td><td>요령 구성·"바로 쓸 수 있는 기준"</td><td>다른 사업(재도전성공패키지) 수치를 그대로 적용</td><td>5.4: 삭제하고 차용 원칙 제시</td></tr>
+    <tr><td class="c">13</td><td>웹사이트 5단계·신구대비표 예시</td><td>보도 수치를 조문 예시로 사용, 상위법 대조·수정본 제공을 구현된 것처럼 표현, 비교 대상 불명확</td><td>6장 비교 대상 후보와 확인 필요, 7장 구현 현황, 가상 값임을 표시</td></tr>
+    <tr><td class="c">14</td><td>기대 효과</td><td>"바로 결재", "검수 시간 단축" 등 미검증 효과 단정</td><td>10장: 기대효과와 검증 방법으로 수정</td></tr>
+    <tr><td class="c">15</td><td>리스크</td><td>외부 AI API 정보 유출 위험 누락</td><td>9.1 추가</td></tr>
+    <tr><td class="c">전체</td><td>일정</td><td>이번 제출물과 향후 최종 규정 작성의 구분 없음</td><td>8장: 제출 범위와 향후 계획 분리</td></tr>
+  </table>
+</div>
+
+<!-- ===================== 부록 B ===================== -->
+<div class="section">
+  <h2><span class="no">B</span>부록 · 출처와 검증 상태</h2>
+  <table>
+    <tr><th style="width:36%">자료</th><th>본 기획서의 사용</th><th style="width:24%">상태</th></tr>
+    <tr><td>AIX CREW 기업 현업과제 카드·과제 신청서 (2026-11-12 발표 자료, 저장소 docs/task-brief.md)</td><td>기업 요구사항의 기준</td><td><span class="tag req">기업 요구</span></td></tr>
+    <tr><td>중기부 2027년 예산안 보도 (뉴스1·와우테일 등, 2026-09-01)</td><td>재도전 3개 사업 예산안 금액</td><td><span class="tag ref">참고·보도</span> 국회 확정 전</td></tr>
+    <tr><td>이슈온 보도 (재도전 1,398억원 관련)</td><td>대상 확대(185→320곳), 신규 사업 세부 미공개</td><td><span class="tag ref">참고·보도</span></td></tr>
+    <tr><td>「중소기업창업 지원법」·같은 법 시행령</td><td>제42·43·63조, 시행령 제40조·별표 4</td><td><span class="tag ok">확인</span> 현행 원문 재대조 예정</td></tr>
+    <tr><td>「중소기업창업 지원사업 통합관리지침」 제14차('25.12.23.)</td><td>운영요령 제38조에 근거한 하위 지침임을 확인</td><td><span class="tag ok">확인</span></td></tr>
+    <tr><td>「중소기업창업 지원사업 운영요령」(중기부)</td><td>통합관리지침의 상위 규범</td><td><span class="tag chk">원문 확인 필요</span></td></tr>
+    <tr><td>「재도전성공패키지」 세부관리기준</td><td>구조 참고 모델</td><td><span class="tag ref">참고</span> 원문 재대조 필요</td></tr>
+    <tr><td>2026 혁신바우처 재기컨설팅 세부 운영계획(안)</td><td>조문 작성 예시의 출처(기존 기획안)</td><td><span class="tag ref">참고</span> 원문 대조 필요</td></tr>
+    <tr><td>MVP 개발 브랜치 README·spec·validation (2026-11-12, f0cb4f5)</td><td>7장 MVP 현황</td><td><span class="tag chk">확인 필요</span> MVP_STATUS.md 없음</td></tr>
+  </table>
+  <p class="small">검증 한계: 이번 작성 환경에서는 국가법령정보센터(law.go.kr)에 직접 접속할 수 없어, 법령 조항은 검색 결과와 2차 자료로 확인했습니다. 과제 착수 후 모든 인용 조항을 현행 원문과 다시 대조합니다.</p>
+  <div class="box navy" style="margin-top:20px">
+    <p style="margin:0">작성: AIX-CREW 2026 과제 04 수행팀 · 과제 제공: 중소벤처기업진흥공단 창업지원처 · 본 문서는 기관의 공식 문서가 아니며, 모든 규정 문안은 기관 검토용 초안입니다.</p>
+  </div>
+</div>
+
+</body>
+</html>
