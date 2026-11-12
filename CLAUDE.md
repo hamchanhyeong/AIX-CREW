@@ -10,16 +10,17 @@ AIX-CREW 2026 부트캠프 기업 과제 수행 저장소.
 
 ## 캠프 문서 (작업 전 확인)
 
-- [intent.md](intent.md) 목적 · [docs/spec.md](docs/spec.md) 규칙 R1~R20 · [docs/plan.md](docs/plan.md) 작업 조각 T-n
+- [intent.md](intent.md) 목적 · [docs/spec.md](docs/spec.md) 규칙 R1~R21 · [docs/plan.md](docs/plan.md) 작업 조각 T-n
 - 커밋 메시지 앞에 `[T-n]`, 관련 규칙은 `R-n`으로 부른다. 작업 전 Plan Mode로 바뀌는 파일을 먼저 제시한다.
 - 검증 결과는 `validation/YYYY-MM-DD.md`, AI 작업 요약은 `ai-log/YYYY-MM-DD.md`에 남긴다.
 - `정답.md`는 사람이 직접 쓰는 파일이다. AI가 기대 결과를 채우지 않는다.
 - 기관 확인이 필요한 사항은 `questions.md`에 추가한다.
 
-## 제출물: index.html 한 장
+## 제출물: 정적 반응형 웹 (`site/`)
 
-- 루트 `index.html`은 생성 파일이다. 직접 고치지 말고 `single/`(화면)·`lib/`(로직)을 고친 뒤 `npm run build:html`로 다시 만든다.
-- 검증: `npm run typecheck`, `npm test`, `npm run e2e`(file://로 시연 1~11단계 실행).
+- `site/`는 생성 결과물이다. 직접 고치지 말고 `web/`(화면)·`lib/`(로직)을 고친 뒤 `npm run build`로 다시 만든다.
+- 반응형 기준: ≥1280px 3단 편집기, 768~1279px 서랍 메뉴·편집기 탭, ≤767px 카드형 표. 가로 넘침이 생기면 안 된다(R21).
+- 검증: `npm run typecheck`, `npm test`, `npm run e2e`(시연 1~11단계 + 390~1440px 반응형 점검).
 - 데모·템플릿 모드 전용. 브라우저 파일에 API 키를 넣지 않는다(AI 기능 없음). 저장은 localStorage.
 - 원칙: 원문 없는 법령 조문 번호·인용을 만들지 않는다. 미확정 값은 채우지 않고 【확인 필요】로 남긴다.
   유사사업 규정은 참고(현행 규정 아님), 배경자료는 근거로 연결하지 않는다. 계획 변경은 조건 ID↔조항 ID 연결로만 처리한다.

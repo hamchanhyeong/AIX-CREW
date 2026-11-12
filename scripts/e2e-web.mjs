@@ -1,5 +1,5 @@
-// index.html(한 장 버전)을 file://로 열어 시연 시나리오 1~11단계를 실행한다.
-// 사용: node scripts/e2e-single.mjs [출력폴더]
+// site/index.html을 file://로 열어 시연 시나리오 1~11단계(PC)와 반응형 점검(390~1440px)을 실행한다.
+// 사용: npm run build && node scripts/e2e-web.mjs [출력폴더]
 import { createRequire } from "node:module";
 import { mkdirSync } from "node:fs";
 import path from "node:path";
@@ -8,8 +8,8 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const require = createRequire(import.meta.url);
 const { chromium } = require("playwright");
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const URL = pathToFileURL(path.join(root, "index.html")).href;
-const OUT = process.argv[2] ?? path.join(root, "test-output/e2e-single");
+const URL = pathToFileURL(path.join(root, "site", "index.html")).href;
+const OUT = process.argv[2] ?? path.join(root, "test-output/e2e-web");
 mkdirSync(OUT, { recursive: true });
 
 function assert(cond, msg) {
@@ -116,5 +116,57 @@ assert(true, "11. 보류 조항이 검토 목록에 ‘조건 값 불일치’�
 await page.goto(URL);
 await page.waitForTimeout(200);
 await shot("00-dashboard");
+// ── 반응형 점검: 화면 폭별로 모든 화면에서 가로 넘침이 없는지
+const ROUTES = ["", "sources", "conditions", "editor", "review", "changes", "export"];
+const WIDTHS = [[390, 844], [768, 1024], [1024, 768], [1280, 800], [1440, 900]];
+const overflow = [];
+for (const [w, h] of WIDTHS) {
+  await page.setViewportSize({ width: w, height: h });
+  for (const r of ROUTES) {
+    await page.goto(`${URL}#/${r}`);
+    await page.waitForTimeout(120);
+    const o = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    if (o > 1) overflow.push(`${w}px #/${r} +${o}px`);
+  }
+}
+assert(overflow.length === 0, `반응형: 5개 폭(390·768·1024·1280·1440px) × 7개 화면 가로 넘침 없음 ${overflow.join(", ")}`);
+
+// ── 휴대폰(390px) 조작
+await page.setViewportSize({ width: 390, height: 844 });
+await page.goto(URL);
+await page.waitForTimeout(100);
+assert((await page.locator(".side").evaluate((e) => e.getBoundingClientRect().right)) <= 0, "휴대폰: 사이드 메뉴는 기본으로 화면 밖(숨김)");
+await page.getByRole("button", { name: "메뉴 열기" }).click();
+await page.locator(".side.open").waitFor();
+await page.waitForTimeout(300);
+assert((await page.locator(".side").evaluate((e) => e.getBoundingClientRect().left)) >= 0, "휴대폰: ☰ 버튼으로 메뉴 서랍 열림");
+await shot("m-00-drawer");
+await page.locator(".side nav a", { hasText: "규정 편집기" }).click();
+await page.waitForTimeout(150);
+assert(!(await page.locator(".side.open").count()), "휴대폰: 메뉴 선택 시 서랍이 닫힘");
+await page.getByRole("tab", { name: "목차" }).click();
+await page.getByRole("button", { name: /제6조\(지원 한도\)/ }).click();
+await page.getByRole("heading", { name: "제6조(지원 한도)" }).waitFor();
+assert(await page.locator("#cl-body").isVisible(), "휴대폰: 목차에서 조항 선택 → 조항 편집 탭으로 이동");
+await shot("m-01-editor");
+await page.getByRole("tab", { name: /근거·검토/ }).click();
+assert(await page.getByRole("heading", { name: "근거" }).isVisible(), "휴대폰: 근거·검토 탭 표시");
+await shot("m-02-evidence");
+await page.goto(`${URL}#/conditions`);
+await page.waitForTimeout(150);
+const label = await page.locator("table.tbl tbody td").first().getAttribute("data-label");
+assert(label === "항목", "휴대폰: 표가 카드형으로 바뀌고 칸마다 열 이름 표시");
+await shot("m-03-conditions");
+await page.goto(`${URL}#/changes`);
+await page.waitForTimeout(150);
+await shot("m-04-changes");
+await page.goto(URL);
+await page.waitForTimeout(100);
+await shot("m-05-dashboard");
+await page.setViewportSize({ width: 768, height: 1024 });
+await page.goto(`${URL}#/editor`);
+await page.waitForTimeout(150);
+await shot("t-01-editor-768");
+
 assert(errors.length === 0, `브라우저 스크립트 오류 없음 ${errors.join(" | ")}`);
 await browser.close();

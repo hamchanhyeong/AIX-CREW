@@ -7,7 +7,7 @@
 | --- | --- | --- |
 | 타입 검사 | `npm run typecheck` | 코드 오류 |
 | 단위·통합 테스트 | `npm test` | R4~R18, R20 로직(25개) |
-| 시연 흐름 | `npm run build:html` → `npm run e2e` | index.html을 file://로 열어 시연 1~11단계 |
+| 시연 흐름·반응형 | `npm run build` → `npm run e2e` | site/index.html을 file://로 열어 시연 1~11단계, 5개 폭 가로 넘침, 휴대폰 조작 |
 | 수동 확인 | 정답.md 대조 | 사람의 기대와 실제 결과 비교 |
 
 검증하지 못한 항목은 ‘미검증’으로 적고 완료로 표시하지 않습니다.

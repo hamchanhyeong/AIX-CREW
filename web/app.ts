@@ -1,6 +1,7 @@
-// 제출용 HTML 한 장(index.html) 버전. 화면은 프레임워크 없이 그리고,
+// 정적 반응형 웹(site/). 화면은 프레임워크 없이 그리고,
 // 조문 템플릿·점검·계획 변경·내보내기 로직은 lib/(테스트로 검증된 코드)를 그대로 사용한다.
 // 저장: 브라우저 localStorage. AI 호출 없음(데모·템플릿 모드 전용 — API 키를 브라우저에 둘 수 없음).
+// 반응형: ≥1280 3단 편집기 · 768~1279 서랍 메뉴 · ≤767 카드형 표·편집기 탭
 import { Packer } from "docx";
 import { applySuggestion, decideSuggestion, diffConditions, proposeFromPlanDoc, saveChangeSetVersion, startChangeSet, type ProposedCondition } from "../lib/change";
 import { computeIssues, ISSUE_LABEL, type Issue, type IssueKind } from "../lib/checks";
@@ -82,6 +83,8 @@ const ui = {
   fromSnap: "",
   toSnap: "current",
   editChunk: null as string | null,
+  navOpen: false,
+  edTab: "main" as "toc" | "main" | "ev",
 };
 let toasts: { id: number; text: string; tone: "ok" | "error" | "info" }[] = [];
 
@@ -198,22 +201,34 @@ function render() {
     r === "export" ? pageExport(issues) :
     pageDashboard();
   document.getElementById("app")!.innerHTML = `
-  <aside class="side">
-    <div class="brand"><small>재기지원 사업</small><b>규정 작성 지원</b><span>HTML 한 장 버전</span></div>
+  <div class="scrim ${ui.navOpen ? "show" : ""}" data-act="nav-close"></div>
+  <aside class="side ${ui.navOpen ? "open" : ""}" aria-label="업무 메뉴">
+    <div class="brand"><small>재기지원 사업</small><b>규정 작성 지원</b><span>데모·템플릿 모드</span></div>
     <nav>${NAV.map(([h, label, step]) => `<a href="#/${h}" class="${route() === h ? "on" : ""}"><i>${step}</i>${label}${h === "review" && issues.length ? `<em>${issues.length}</em>` : ""}</a>`).join("")}</nav>
     <p class="side-foot">모든 결과는 검토용 초안입니다. 기관 승인·법적 적합성을 보장하지 않습니다.</p>
   </aside>
   <div class="main">
     <header class="top">
+      <button class="hamb" data-act="nav-toggle" aria-label="메뉴 열기" aria-expanded="${ui.navOpen}">☰</button>
       <div class="title"><b>${esc(ws?.project.name ?? "작업공간 없음")}</b>${ws ? `<small>버전 ${esc(currentVersionLabel(ws))}</small>` : ""}</div>
-      <label class="ws-sel">작업공간 <select data-change="kind"><option value="main" ${kind === "main" ? "selected" : ""}>실제 작업공간</option><option value="sample" ${kind === "sample" ? "selected" : ""}>샘플(시연용 가상 자료)</option></select></label>
-      ${badge("데모 모드 · 템플릿 작성", "amber", "AI 분석이 아닌 조문 템플릿과 구조화된 조건으로 작성합니다.")}
+      <label class="ws-sel"><span class="ws-l">작업공간</span> <select data-change="kind"><option value="main" ${kind === "main" ? "selected" : ""}>실제 작업공간</option><option value="sample" ${kind === "sample" ? "selected" : ""}>샘플(시연용 가상 자료)</option></select></label>
+      <span class="mode">${badge("데모 모드 · 템플릿 작성", "amber", "AI 분석이 아닌 조문 템플릿과 구조화된 조건으로 작성합니다.")}</span>
       <span class="save ${saveMsg.startsWith("저장 실패") ? "err" : ""}">${esc(saveMsg)}</span>
     </header>
     ${ws?.isDemo ? `<div class="demo-bar">${DEMO_NOTICE} 화면과 내보낸 파일에 같은 표시가 유지됩니다.</div>` : ""}
     <main class="content ${r === "editor" ? "full" : ""}">${page}</main>
   </div>`;
+  afterRender();
   renderToasts();
+}
+/** 좁은 화면 카드형 표를 위해 각 칸에 열 이름을 붙이고, 머리글 높이를 CSS 변수로 알린다 */
+function afterRender() {
+  document.querySelectorAll<HTMLTableElement>("table.tbl").forEach((t) => {
+    const heads = [...t.querySelectorAll("thead th")].map((th) => th.textContent?.trim() ?? "");
+    t.querySelectorAll("tbody tr").forEach((tr) => [...tr.children].forEach((td, i) => td.setAttribute("data-label", heads[i] ?? "")));
+  });
+  const h = document.querySelector<HTMLElement>(".top");
+  if (h) document.documentElement.style.setProperty("--hdr", `${h.offsetHeight}px`);
 }
 function renderToasts() {
   const el = document.getElementById("toasts");
@@ -249,7 +264,7 @@ function pageDashboard() {
   <div class="stats">${stat("등록 자료", m.docCount, `원문 등록 ${m.registeredDocCount}건 · 미등록 ${m.docCount - m.registeredDocCount}건`, "sources")}${stat("근거 미확인 조항", m.unverifiedClauses, "원문 미등록·근거 미연결", "review", true)}${stat("미확정 사업 조건", m.unconfirmedConditions, `전체 ${m.totalConditions}개 조건 중`, "conditions", true)}${stat("검토 목록", m.issueCount, `결정 대기 제안 ${m.pendingSuggestions}건`, "review", true)}</div>
   <div class="g2">${prog("rule")}${prog("manual")}</div>
   ${card("세부사업 구성과 작성 전략", `<div class="g3">${w.programs.map((p) => `<div class="box"><div class="split"><b>${esc(p.name)}</b>${p.confirmedByAgency ? badge("기관 확인", "green") : badge("기관 확인 전", "amber")}</div><div class="strat">${STRATEGY_LABEL[p.strategy]}</div><small class="muted">${esc(p.strategyNote)}</small></div>`).join("")}</div><p class="muted sm">운영규칙은 3개 세부사업 공통 1부, 운영요령은 공통편과 사업별 3개 편으로 구성된 1부입니다(기획안 기준 초기 목차, 편집 가능).</p>`, badge(PLAN_BASIS_NOTICE, "amber"))}
-  <div class="notice gray">HTML 한 장 버전: 데이터는 이 브라우저(localStorage)에만 저장됩니다. 다른 PC로 옮기거나 브라우저 데이터를 지우기 전에 ‘작업 백업.json’을 받아 두세요. AI 작성 제안과 PDF·DOCX 원문 추출은 이 버전의 범위 밖입니다.</div>`;
+  <div class="notice gray">데이터는 이 브라우저(localStorage)에만 저장됩니다. 다른 PC로 옮기거나 브라우저 데이터를 지우기 전에 ‘작업 백업.json’을 받아 두세요. AI 작성 제안과 PDF·DOCX 원문 추출은 이 버전의 범위 밖입니다.</div>`;
 }
 
 // ───────────────────────── 자료
@@ -345,6 +360,7 @@ function pageEditor(issues: Issue[]) {
   if (!ui.clauseId || !clauses.some((c) => c.id === ui.clauseId)) ui.clauseId = clauses[0]?.id ?? null;
   const nums = articleNumbers(w, dk);
   const sections = w.sections.filter((s) => s.docKind === dk).sort((a, b) => a.order - b.order);
+  const c = w.clauses.find((x) => x.id === ui.clauseId);
   const toc = sections.map((s) => {
     const prog = s.programId ? w.programs.find((p) => p.id === s.programId) : undefined;
     return `<div class="sec"><div class="sec-h"><b>${esc(sectionHeading(dk, s.order, s.title))}</b><button class="lnk" data-act="rename-sec" data-id="${s.id}" title="이름 바꾸기">✎</button></div>${prog ? `<small class="strat">${STRATEGY_LABEL[prog.strategy]}</small>` : ""}${s.planNote ? `<small class="plan-note">${esc(s.planNote)}</small>` : ""}
@@ -353,8 +369,9 @@ function pageEditor(issues: Issue[]) {
       return `<li><button class="toc ${ui.clauseId === c.id ? "on" : ""}" data-act="sel-clause" data-id="${c.id}"><i class="dot d-${c.reviewStatus}"></i><span>제${nums.get(c.id)}조(${esc(c.title)})</span>${n ? `<em>${n}</em>` : ""}</button></li>`;
     }).join("")}<li><button class="lnk add" data-act="add-clause" data-sec="${s.id}">+ 조항 추가</button></li></ul></div>`;
   }).join("");
-  const c = w.clauses.find((x) => x.id === ui.clauseId);
-  return `<div class="editor">
+  const tabs: [typeof ui.edTab, string][] = [["toc", "목차"], ["main", "조항 편집"], ["ev", `근거·검토 ${c ? issues.filter((i) => i.clauseId === c.id).length : 0}`]];
+  return `<div class="ed-tabs" role="tablist">${tabs.map(([k, l]) => `<button role="tab" aria-selected="${ui.edTab === k}" class="${ui.edTab === k ? "on" : ""}" data-act="ed-tab" data-k="${k}">${l}</button>`).join("")}</div>
+  <div class="editor tab-${ui.edTab}">
     <aside class="ed-toc"><div class="seg">${(["rule", "manual"] as DocKind[]).map((d) => `<button class="${dk === d ? "on" : ""}" data-act="ed-doc" data-doc="${d}">${DOC_KIND_LABEL[d]}</button>`).join("")}</div><div class="toc-list">${toc}</div><small class="muted toc-foot">조문 번호는 순서로 자동 계산되며 조항 ID는 순서가 바뀌어도 유지됩니다. 목차는 기획안 기준 초기 구성입니다.</small></aside>
     <div class="ed-main">${c ? clausePanel(c.id, nums.get(c.id)) : `<div class="empty"><b>조항이 없습니다</b></div>`}</div>
     <aside class="ed-ev">${c ? evidencePanel(c.id, issues.filter((i) => i.clauseId === c.id)) : ""}</aside>
@@ -377,7 +394,7 @@ function clausePanel(id: string, no?: number) {
     <div class="preview">${marked(d.body)}</div>
     <div class="row">${btn("저장", "save-clause", { v: "pri", disabled: !dirty })}${btn("되돌리기", "revert-clause", { v: "ghost", disabled: !dirty })}<span id="dirty" class="warn-t sm">${dirty ? "저장하지 않은 수정 내용이 있습니다" : ""}</span><span class="grow"></span>${btn("↑ 위로", "move-up", { v: "ghost", sm: true })}${btn("↓ 아래로", "move-down", { v: "ghost", sm: true })}${btn("삭제", "del-clause", { v: "danger", sm: true })}</div>
   </div></section>
-  ${card("이 조항만 다시 작성 제안", `<div class="row">${btn("템플릿 재작성 제안", "tpl-suggest", { v: "sub", disabled: !c.templateKey })}${btn("AI 작성 제안", "noop", { v: "sub", disabled: true })}<small class="muted">HTML 한 장 버전은 AI를 호출하지 않습니다(API 키를 브라우저에 둘 수 없음). 제안은 바로 적용되지 않습니다.</small></div>`)}
+  ${card("이 조항만 다시 작성 제안", `<div class="row">${btn("템플릿 재작성 제안", "tpl-suggest", { v: "sub", disabled: !c.templateKey })}${btn("AI 작성 제안", "noop", { v: "sub", disabled: true })}<small class="muted">이 웹은 AI를 호출하지 않습니다(API 키를 브라우저에 둘 수 없음). 제안은 바로 적용되지 않습니다.</small></div>`)}
   ${sugs.map((s) => {
     const stale = s.before !== c.body || s.beforeTitle !== c.title;
     return `<section class="card sug ${s.status}"><div class="cb"><div class="row tight">${badge(s.kind === "plan_change" ? "계획 변경 수정안" : "템플릿 재작성 제안", "blue")}${badge("[수정]", "blue")}${s.status === "held" ? badge("보류 중") : ""}<small class="muted">${esc(s.reason)}</small></div>
@@ -633,11 +650,14 @@ document.addEventListener("click", async (e) => {
     // 편집기
     case "gen-draft": update((w) => { generateDraft(w); createSnapshot(w, "초안 작성(템플릿)"); }, "운영규칙·운영요령 초안을 작성했습니다(v1 저장)."); ui.editDoc = "rule"; ui.clauseId = null; return render();
     case "ed-doc": if (dirtyGuard()) { ui.editDoc = el.dataset.doc as DocKind; ui.clauseId = null; ui.draft = null; render(); } return;
-    case "sel-clause": if (dirtyGuard()) { ui.clauseId = id; ui.draft = null; ui.linking = false; render(); } return;
+    case "sel-clause": if (dirtyGuard()) { ui.clauseId = id; ui.draft = null; ui.linking = false; ui.edTab = "main"; render(); window.scrollTo(0, 0); } return;
+    case "ed-tab": ui.edTab = el.dataset.k as typeof ui.edTab; render(); window.scrollTo(0, 0); return;
+    case "nav-toggle": ui.navOpen = !ui.navOpen; return render();
+    case "nav-close": ui.navOpen = false; return render();
     case "goto-clause": {
       const c = ws!.clauses.find((x) => x.id === id);
       if (!c) return;
-      ui.editDoc = c.docKind; ui.clauseId = c.id; ui.draft = null;
+      ui.editDoc = c.docKind; ui.clauseId = c.id; ui.draft = null; ui.edTab = "main";
       location.hash = "#/editor";
       return render();
     }
@@ -742,7 +762,7 @@ document.addEventListener("change", async (e) => {
     case "txt-file": {
       const f = t.files?.[0];
       if (!f) return;
-      if (!/\.(txt|md)$/i.test(f.name)) return notify("HTML 한 장 버전은 TXT만 불러올 수 있습니다. PDF·DOCX는 본문을 복사해 붙여넣으세요.", "error");
+      if (!/\.(txt|md)$/i.test(f.name)) return notify("TXT만 불러올 수 있습니다. PDF·DOCX는 본문을 복사해 붙여넣으세요.", "error");
       const buf = await f.arrayBuffer();
       let text = new TextDecoder("utf-8").decode(buf);
       if (text.includes("�")) { try { text = new TextDecoder("euc-kr").decode(buf); } catch {} }
@@ -783,8 +803,13 @@ document.addEventListener("change", async (e) => {
   }
 });
 
+window.addEventListener("resize", () => {
+  const h = document.querySelector<HTMLElement>(".top");
+  if (h) document.documentElement.style.setProperty("--hdr", `${h.offsetHeight}px`);
+});
 window.addEventListener("hashchange", () => {
   ui.linking = false;
+  ui.navOpen = false;
   render();
 });
 if (ws && kind === "main" && !safeGet(wsKey("main"))) persist();

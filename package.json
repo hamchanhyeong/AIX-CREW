@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "build:html": "node scripts/build-single.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "e2e": "node scripts/e2e-single.mjs"
+    "e2e": "node scripts/e2e-web.mjs",
+    "build": "node scripts/build-web.mjs"
   },
   "dependencies": {
     "docx": "^9.15.3",

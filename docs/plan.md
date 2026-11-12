@@ -1,13 +1,13 @@
 # plan.md — 계획부터 받는다
 
-> 작업은 T-번호 단위로 한 조각씩 진행하고, 커밋 메시지 앞에 `[T-n]`을 붙인다(예: `[T-7] 제출용 index.html 정리`).
+> 작업은 T-번호 단위로 한 조각씩 진행하고, 커밋 메시지 앞에 `[T-n]`을 붙인다(예: `[T-8] Kick-off 답변 반영`).
 > 각 조각은 시작 전에 바뀌는 파일을 확인하고(Claude Code Plan Mode), 끝나면 `npm test`·`npm run e2e`로 검증해 [validation/](../validation/)에 남긴다.
 
 ## 작업 환경 (VS Code + Claude Code)
 1. VS Code에서 저장소 폴더를 열고, 시작 전에 `git pull`
 2. Claude Code에 작업을 시킬 때는 **Plan Mode**로 계획(바뀌는 파일·규칙 번호)을 먼저 받고 승인
-3. 화면은 `single/`, 로직은 `lib/`를 고친다. `index.html`은 직접 고치지 않고 `npm run build:html`로 다시 만든다
-4. 검증: `npm run typecheck` → `npm test` → `npm run build:html` → `npm run e2e`
+3. 화면은 `web/`, 로직은 `lib/`를 고친다. `site/`는 직접 고치지 않고 `npm run build`로 다시 만든다
+4. 검증: `npm run typecheck` → `npm test` → `npm run build` → `npm run e2e`
 5. 커밋 `[T-n] …` 후 `git push`. 클라우드 세션(claude.ai/code)과 번갈아 쓰면 시작 전 `git pull`을 꼭 한다
 
 ## 파일 구조
@@ -21,9 +21,9 @@
 | `lib/change.ts`, `lib/compare.ts` | 계획 변경·수정안·신구대비표 | R13~R18 |
 | `lib/export/docx.ts`, `lib/export/csv.ts` | Word·CSV 내보내기 | R20 |
 | `lib/demo.ts` | 시연용 가상 자료 | — |
-| `single/app.ts`, `single/style.css` | 화면(프레임워크 없음), localStorage 저장 | R19 |
-| `scripts/build-single.mjs` | index.html 생성 | — |
-| `tests/`, `scripts/e2e-single.mjs` | 자동 검증 | 전체 |
+| `web/app.ts`, `web/style.css`, `web/index.html` | 화면(프레임워크 없음, 반응형), localStorage 저장 | R19, R21 |
+| `scripts/build-web.mjs` | `site/` 생성(index.html + assets) | — |
+| `tests/`, `scripts/e2e-web.mjs` | 자동 검증(시연 흐름·반응형) | 전체 |
 
 ## 작업 조각
 | T | 내용 | 상태 | 커밋 |
@@ -33,7 +33,8 @@
 | T-3 | 웹 앱(Next.js) 시제품과 시연 흐름 검증 | 완료 후 제거(T-5) | `84cdc1b` |
 | T-4 | 제출용 `index.html` 한 장 빌드 | 완료 | `1d56170` |
 | T-5 | Next.js 앱 제거, index.html과 원본 코드만 유지 | 완료 | `20ce3f1` |
-| T-6 | 캠프 문서 정리(intent·spec·plan·정답·validation·ai-log·questions) | 완료 | 이 커밋 |
+| T-6 | 캠프 문서 정리(intent·spec·plan·정답·validation·ai-log·questions) | 완료 | `f9a005e` |
+| T-6a | HTML 한 장 → 정적 반응형 웹(`site/`) 전환 | 완료 | 이 커밋 |
 | T-7 | `정답.md` 손으로 작성 → 실행 결과와 대조 → 불일치 수정 | 할 일(담당자) | |
 | T-8 | Kick-off(11/16) 답변 반영: 목차·사업명·조건·템플릿 문구 수정 | 할 일 | |
 | T-9 | 기관 제공 원문(법령·지침·유사사업 규정·운영계획) 붙여넣기 → 근거 연결 확인 | 할 일 | |

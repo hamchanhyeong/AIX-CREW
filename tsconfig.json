@@ -13,6 +13,6 @@
     "types": ["node"],
     "paths": { "@/*": ["./*"] }
   },
-  "include": ["lib/**/*.ts", "single/**/*.ts", "tests/**/*.ts"],
+  "include": ["lib/**/*.ts", "web/**/*.ts", "tests/**/*.ts"],
   "exclude": ["node_modules"]
 }
