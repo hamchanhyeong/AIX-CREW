@@ -1,14 +1,65 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { Document, Packer, Paragraph, TextRun } from "docx";
 import mammoth from "mammoth";
+import { PDFDocument, StandardFonts } from "pdf-lib";
 import { describe, expect, it } from "vitest";
 import { applySuggestion, decideSuggestion, diffConditions, proposeFromPlanDoc, startChangeSet } from "@/lib/change";
 import { buildCompareRows } from "@/lib/compare";
 import { buildEvidenceCsv } from "@/lib/export/csv";
 import { buildCompareDocx, buildRegulationDocx } from "@/lib/export/docx";
+import { parseUpload } from "@/lib/server/parse";
 import { addPlanV2, clauseByKey, draftedSample } from "./helpers";
 
 const OUT = path.join(process.cwd(), "test-output");
+
+describe("파일 업로드·추출", () => {
+  it("TXT(UTF-8·EUC-KR)를 읽는다", async () => {
+    const r = await parseUpload("plan.txt", Buffer.from("- 지원 한도: 1억원", "utf8"));
+    expect(r.ok && r.text).toContain("지원 한도");
+    const euc = Buffer.from([0xc7, 0xd1, 0xb1, 0xdb]); // '한글' (EUC-KR)
+    const r2 = await parseUpload("a.txt", euc);
+    expect(r2.ok && r2.text).toBe("한글");
+  });
+
+  it("HWP는 지원하지 않는다고 알린다", async () => {
+    const r = await parseUpload("규정.hwp", Buffer.from("x"));
+    expect(r).toMatchObject({ ok: false, code: "unsupported" });
+  });
+
+  it("텍스트 기반 PDF는 페이지별로 추출한다", async () => {
+    const pdf = await PDFDocument.create();
+    const font = await pdf.embedFont(StandardFonts.Helvetica);
+    for (const t of ["Article 1 Purpose of this regulation text page one", "Article 2 Definitions on page two of the file"]) {
+      pdf.addPage([400, 300]).drawText(t, { x: 20, y: 250, size: 10, font });
+    }
+    const r = await parseUpload("law.pdf", Buffer.from(await pdf.save()));
+    expect(r.ok).toBe(true);
+    if (r.ok) {
+      expect(r.pages).toHaveLength(2);
+      expect(r.pages![1]).toContain("Definitions");
+    }
+  });
+
+  it("텍스트가 없는(스캔) PDF는 실패로 알린다", async () => {
+    const pdf = await PDFDocument.create();
+    pdf.addPage([400, 300]).drawRectangle({ x: 10, y: 10, width: 100, height: 100 });
+    const r = await parseUpload("scan.pdf", Buffer.from(await pdf.save()));
+    expect(r).toMatchObject({ ok: false, code: "scanned" });
+  });
+
+  it("DOCX를 읽고, 손상된 DOCX는 실패로 알린다", async () => {
+    const doc = new Document({ sections: [{ children: [new Paragraph({ children: [new TextRun("제1조(목적) 이 규정은 시험용이다.")] })] }] });
+    const r = await parseUpload("a.docx", await Packer.toBuffer(doc));
+    expect(r.ok && r.text).toContain("제1조(목적)");
+    const bad = await parseUpload("bad.docx", Buffer.from("not a zip"));
+    expect(bad).toMatchObject({ ok: false, code: "failed" });
+  });
+
+  it("지원하지 않는 형식은 실패로 알린다", async () => {
+    expect(await parseUpload("a.xlsx", Buffer.from("x"))).toMatchObject({ ok: false, code: "unsupported" });
+  });
+});
 
 describe("내보내기", () => {
   it("운영규칙·요령 DOCX가 열리고 한글·표·검토용 표시가 유지된다", async () => {
